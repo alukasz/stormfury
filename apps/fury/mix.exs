@@ -30,6 +30,7 @@ defmodule Fury.MixProject do
     [
       {:cowboy, "~> 2.2"},
       {:poison, "~> 3.1"},
+      {:mox, "~> 0.3", only: :test},
       {:websocket_client, github: "sanmiguel/websocket_client", tag: "1.3.0"}
     ]
   end
