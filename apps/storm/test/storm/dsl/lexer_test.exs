@@ -21,11 +21,11 @@ defmodule Storm.DSL.LexerTest do
     end
 
     test "new lines" do
-      assert Lexer.tokenize("\n") == {:ok, [{:eol, 1}]}
+      assert Lexer.tokenize("\n") == {:ok, []}
     end
 
     test "multiple new lines" do
-      assert Lexer.tokenize("\n\n\n") == {:ok, [{:eol, 1}]}
+      assert Lexer.tokenize("\n\n\n") == {:ok, []}
     end
 
     test "new lines (heredoc)" do
@@ -34,7 +34,7 @@ defmodule Storm.DSL.LexerTest do
 
       """
 
-      assert Lexer.tokenize(heredoc) == {:ok, [{:eol, 1}]}
+      assert Lexer.tokenize(heredoc) == {:ok, []}
     end
   end
 

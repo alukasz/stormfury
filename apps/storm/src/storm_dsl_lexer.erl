@@ -449,8 +449,8 @@ yyaction(4, _, _, TokenLine) ->
 yyaction(5, TokenLen, YYtcs, TokenLine) ->
     TokenChars = yypre(YYtcs, TokenLen),
     yyaction_5(TokenChars, TokenLine);
-yyaction(6, _, _, TokenLine) ->
-    yyaction_6(TokenLine);
+yyaction(6, _, _, _) ->
+    yyaction_6();
 yyaction(7, _, _, _) ->
     yyaction_7();
 yyaction(_, _, _, _) -> error.
@@ -485,10 +485,10 @@ yyaction_4(TokenLine) ->
 yyaction_5(TokenChars, TokenLine) ->
      build_token (TokenLine, TokenChars) .
 
--compile({inline,yyaction_6/1}).
+-compile({inline,yyaction_6/0}).
 -file("src/storm_dsl_lexer.xrl", 23).
-yyaction_6(TokenLine) ->
-     { token, { eol, TokenLine } } .
+yyaction_6() ->
+     skip_token .
 
 -compile({inline,yyaction_7/0}).
 -file("src/storm_dsl_lexer.xrl", 26).

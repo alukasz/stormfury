@@ -22,7 +22,7 @@ Rules.
 ({LowerCase}|_)+ : build_token(TokenLine, TokenChars).
 
 % end of line
-(\n)+ : {token, {eol, TokenLine}}.
+(\n)+ : skip_token.
 
 % whitespace characters
 {Whitespace}+ : skip_token.
