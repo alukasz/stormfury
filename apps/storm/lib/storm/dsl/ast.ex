@@ -5,7 +5,7 @@ defmodule Storm.DSL.AST do
   def build(dsl) do
     with {:ok, tokens} <- Lexer.tokenize(dsl),
          {:ok, ast} <- Parser.parse(tokens) do
-      ast
+      {:ok, ast}
     else
       error -> error
     end

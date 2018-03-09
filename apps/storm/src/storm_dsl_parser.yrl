@@ -10,7 +10,7 @@ boolean
 
 Terminals
 int float string identifier
-connect push think do end for in true false null
+push think do end for in true false null
 '{' '}' '[' ']' ':' ',' '..'
 .
 
@@ -23,7 +23,6 @@ expr_list -> expr : ['$1'].
 expr_list -> expr expr_list : ['$1' | '$2'].
 
 % expressions
-expr -> connect : {connect, []}.
 expr -> push data : {push, ['$2']}.
 expr -> think int : {think, [extract_value('$2')]}.
 expr -> for in_expr block: {for, ['$2', '$3']}.
@@ -40,7 +39,7 @@ block -> do expr_list end : {block, '$2'}.
 in_expr -> var in range : {in, ['$1', '$3']}.
 var -> identifier : {var, [extract_value('$1')]}.
 
-range -> int '..' int: {'..', [extract_value('$1'), extract_value('$3')]}.
+range -> int '..' int: {range, [extract_value('$1'), extract_value('$3')]}.
 range -> list : '$1'.
 
 %% atomic values

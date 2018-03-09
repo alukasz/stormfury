@@ -4,7 +4,7 @@ defmodule Storm.DSL.LexerTest do
   alias Storm.DSL.Lexer
 
   @reserved_words [
-    :connect, :push, :think, :do, :end, :for, :in, :true, :false, :null
+    :push, :think, :do, :end, :for, :in, :true, :false, :null
   ]
 
   @symbols [

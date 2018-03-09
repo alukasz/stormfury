@@ -54,20 +54,6 @@ defmodule Storm.DSL.ParserTest do
     end
   end
 
-  describe "connect" do
-    test "AST is {connect, []}" do
-      tokens = [{:connect, 1}]
-
-      assert Parser.parse(tokens) == {:ok, [{:connect, []}]}
-    end
-
-    test "does not take any arguments" do
-      tokens = [{:connect, 1}, {:string, 1, "foo"}]
-
-      assert Parser.parse(tokens) == syntax_error("'foo'")
-    end
-  end
-
   describe "push" do
     test "AST is {push, args}" do
       tokens = [{:push, 1}, {:string, 1, "foo"}]
@@ -105,7 +91,7 @@ defmodule Storm.DSL.ParserTest do
       assert Parser.parse(tokens) ==
         {:ok, [
           {:for, [
-            {:in, [{:var, ["i"]}, {:.., [1, 10]}]},
+            {:in, [{:var, ["i"]}, {:range, [1, 10]}]},
             {:block, []}
           ]}
         ]}

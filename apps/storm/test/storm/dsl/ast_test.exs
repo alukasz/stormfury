@@ -7,12 +7,12 @@ defmodule Storm.DSL.ASTTest do
     test "returns AST of given DSL" do
       dsl = """
       for i in 1..10 do
-        connect
+        think 10
         push "hello world"
       end
       """
 
-      assert AST.build(dsl) == ast_tokens()
+      assert AST.build(dsl) == {:ok, ast_tokens()}
     end
 
     test "returns error tuple on invalid DSL syntax" do
@@ -41,9 +41,9 @@ defmodule Storm.DSL.ASTTest do
       assert_receive {:for, _}
       assert_receive {:in, _}
       assert_receive {:var, _}
-      assert_receive {:.., _}
+      assert_receive {:range, _}
       assert_receive {:block, _}
-      assert_receive {:connect, _}
+      assert_receive {:think, _}
       assert_receive {:push, _}
     end
 
@@ -57,10 +57,10 @@ defmodule Storm.DSL.ASTTest do
       for: [
         in: [
           var: ["i"],
-          ..: [1, 10]
+          range: [1, 10]
         ],
         block: [
-          connect: [],
+          think: [10],
           push: ["hello world"]
         ]
       ]

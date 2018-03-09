@@ -39,7 +39,6 @@ build_token(Line, TokenChars) ->
 strip(TokenChars, TokenLen) ->
     lists:sublist(TokenChars, 2, TokenLen - 2).
 
-reserved_word("connect") -> true;
 reserved_word("push") -> true;
 reserved_word("think") -> true;
 reserved_word("do") -> true;
