@@ -40,6 +40,14 @@ defmodule Storm.DSL.ScenarioTest do
         {:ok, [push: "1-3", push: "1-4", push: "2-3", push: "2-4"]}
     end
 
+    test "encodes JSON in push" do
+      data = %{"foo" => "bar"}
+      ast = [push: [data]]
+
+      assert Scenario.build(ast) ==
+        {:ok, [push: Poison.encode!(data)]}
+    end
+
     test "returns error on invalid expression" do
       assert Scenario.build([foo: ["bar"]]) ==
         {:error, "invalid expression foo with arguments [\"bar\"]"}

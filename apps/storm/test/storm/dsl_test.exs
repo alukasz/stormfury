@@ -15,9 +15,10 @@ defmodule Storm.DSLTest do
     end
 
     test "loop" do
-      dsl = "for i in 1..2 do push \"{{i}}\" end"
+      dsl = "for i in 1..2 do push {\"body\":\"{{i}}\"} end"
 
-      assert DSL.parse(dsl) == {:ok, [push: "1", push: "2"]}
+      assert DSL.parse(dsl) ==
+        {:ok, [push: "{\"body\":\"1\"}", push: "{\"body\":\"2\"}"]}
     end
 
     test "nested loop" do

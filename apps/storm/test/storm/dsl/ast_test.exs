@@ -52,6 +52,40 @@ defmodule Storm.DSL.ASTTest do
     end
   end
 
+  describe "transform/2" do
+    test "performs depth first traversal of AST" do
+      AST.transform ast_tokens(), fn ast ->
+        send(self(), ast)
+      end
+
+      assert_receive {:for, _}
+      assert_receive {:in, _}
+      assert_receive {:var, _}
+      assert_receive {:range, _}
+      assert_receive {:block, _}
+      assert_receive {:think, _}
+      assert_receive {:push, _}
+    end
+
+    test "replaces AST nodes with value returned by mapper" do
+      mapper = fn
+        {:push, _} -> {:push, ["updated data"]}
+        {:block, block} -> {:block, block ++ block}
+        ast -> ast
+      end
+
+      assert AST.transform([block: [think: [10], push: "data"]], mapper) ==
+        [
+          block: [
+            think: [10],
+            push: ["updated data"],
+            think: [10],
+            push: ["updated data"]
+          ]
+        ]
+    end
+  end
+
   defp ast_tokens do
     [
       for: [

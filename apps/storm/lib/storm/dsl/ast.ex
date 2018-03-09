@@ -25,4 +25,14 @@ defmodule Storm.DSL.AST do
     do_traverse(args, acc, fun)
   end
   defp do_traverse(_, acc, _), do: acc
+
+  def transform(list, fun) when is_list(list) do
+    Enum.map(list, &transform(&1, fun))
+  end
+  def transform({_, _} = ast, fun) do
+    {form, args} = fun.(ast)
+    args = transform(args, fun)
+    {form, args}
+  end
+  def transform(ast, _), do: ast
 end

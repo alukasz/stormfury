@@ -1,15 +1,27 @@
 defmodule Storm.DSL.Scenario do
+  alias Storm.DSL.AST
   alias Storm.DSL.Util
 
   def build(ast) do
     try do
       scenario = ast
+      |> encode_data()
       |> transform_expr(%{})
       |> List.flatten()
 
       {:ok, scenario}
     rescue
       e in RuntimeError -> {:error, e.message}
+    end
+  end
+
+  defp encode_data(ast) do
+    AST.transform ast, fn
+      {:push, [data]} when is_list(data) or is_map(data) ->
+        {:push, [Poison.encode!(data)]}
+
+      ast ->
+        ast
     end
   end
 
