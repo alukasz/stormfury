@@ -97,6 +97,20 @@ defmodule Storm.DSL.ParserTest do
         ]}
     end
 
+    test "works with list" do
+      tokens = [{:for, 1}, {:identifier, 1, "i"}, {:in, 1},
+                {:"[", 1}, {:int, 1, 1}, {:","}, {:int, 1, 2}, {:"]", 1,},
+                {:do, 1}, {:end, 1}]
+
+      assert Parser.parse(tokens) ==
+        {:ok, [
+          {:for, [
+              {:in, [{:var, ["i"]}, {:list, [1, 2]}]},
+              {:block, []}
+            ]}
+        ]}
+    end
+
     test "requires variable and range" do
       tokens = [{:for, 1}, {:do, 1}, {:end, 1}]
 

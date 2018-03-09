@@ -24,7 +24,7 @@ defmodule Storm.DSLTest do
     test "nested loop" do
       dsl = """
       for i in 1..2 do
-        for j in 3..4 do
+        for j in [3, 4] do
           push "{{i}}-{{j}}"
         end
       end

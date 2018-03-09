@@ -19,28 +19,28 @@ Rootsymbol grammar.
 
 grammar -> expr_list : '$1'.
 
-expr_list -> expr : ['$1'].
+expr_list -> expr           : ['$1'].
 expr_list -> expr expr_list : ['$1' | '$2'].
 
 % expressions
-expr -> push data : {push, ['$2']}.
-expr -> think int : {think, [extract_value('$2')]}.
-expr -> for in_expr block: {for, ['$2', '$3']}.
+expr -> push data         : {push, ['$2']}.
+expr -> think int         : {think, [extract_value('$2')]}.
+expr -> for in_expr block : {for, ['$2', '$3']}.
 
-data -> int : extract_value('$1').
+data -> int    : extract_value('$1').
 data -> string : extract_value('$1').
-data -> json : '$1'.
+data -> json   : '$1'.
 
 % block
-block -> do end : {block, []}.
+block -> do end           : {block, []}.
 block -> do expr_list end : {block, '$2'}.
 
 % in
 in_expr -> var in range : {in, ['$1', '$3']}.
 var -> identifier : {var, [extract_value('$1')]}.
 
-range -> int '..' int: {range, [extract_value('$1'), extract_value('$3')]}.
-range -> list : '$1'.
+range -> int '..' int : {range, [extract_value('$1'), extract_value('$3')]}.
+range -> list         : {list, '$1'}.
 
 %% atomic values
 value -> boolean : '$1'.

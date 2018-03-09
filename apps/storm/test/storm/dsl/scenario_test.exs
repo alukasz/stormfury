@@ -15,7 +15,7 @@ defmodule Storm.DSL.ScenarioTest do
     test "expands loop" do
       ast = [
         for: [
-          in: [var: ["i"], range: [1, 2]],
+          in: [var: ["i"], list: [1, 2]],
           block: [push: ["data {{i}}"]]
         ]
       ]

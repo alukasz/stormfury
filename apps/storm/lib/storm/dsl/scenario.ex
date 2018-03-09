@@ -53,6 +53,9 @@ defmodule Storm.DSL.Scenario do
   defp transform_expr({:range, [first, last]}, _) do
     first..last
   end
+  defp transform_expr({:list, list}, _) do
+    list
+  end
   defp transform_expr({form, args}, _) do
     raise "invalid expression #{form} with arguments #{inspect args}"
   end
