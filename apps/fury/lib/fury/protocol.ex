@@ -1,6 +1,6 @@
 defmodule Fury.Protocol do
   @type session :: term
-  @type request :: {:push, String.t}
+  @type request :: {atom, String.t}
   @type data :: binary
 
   @callback init :: session

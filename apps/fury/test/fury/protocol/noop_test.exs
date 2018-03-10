@@ -10,7 +10,7 @@ defmodule Fury.Protocol.NoopTest do
   test "format/3 returns unmodified payload" do
     payload = "data"
 
-    assert Noop.format(payload, %{}) == {:ok, payload}
+    assert Noop.format({:push, payload}, %{}) == {:ok, payload}
   end
 
   test "handle_data/2 returns unmodified session" do
