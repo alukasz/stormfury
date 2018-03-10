@@ -17,7 +17,8 @@ defmodule Fury.ClientServerTest do
       transport_mod: Transport,
       protocol_mod: Protocol,
       session_id: :session_id,
-      session: %{}
+      session: %{},
+      request_id: 0
     }
 
     {:ok, start_opts: start_opts, state: state}
@@ -40,6 +41,8 @@ defmodule Fury.ClientServerTest do
       expect Protocol, :init, fn -> %{} end
 
       ClientServer.init(opts)
+
+      verify!()
     end
 
     test "sends message to connect", %{start_opts: opts} do
@@ -58,6 +61,8 @@ defmodule Fury.ClientServerTest do
 
       assert ClientServer.handle_info(:connect, state) ==
         {:noreply, %{state | transport: pid}}
+
+      verify!()
     end
 
     test "starts making requests when transport connects", %{state: state} do
@@ -67,7 +72,7 @@ defmodule Fury.ClientServerTest do
 
       ClientServer.handle_info(:connect, state)
 
-      assert_receive {:make_request, 0}
+      assert_receive :make_request
     end
 
     test "on error sets transport to :not_connected", %{state: state} do
@@ -78,6 +83,8 @@ defmodule Fury.ClientServerTest do
 
       assert ClientServer.handle_info(:connect, state) ==
         {:noreply, %{state | transport: :not_connected}}
+
+      verify!()
     end
 
     test "does not make requests on transport error", %{state: state} do
@@ -87,7 +94,7 @@ defmodule Fury.ClientServerTest do
 
       ClientServer.handle_info(:connect, state)
 
-      refute_receive {:make_request, 0}
+      refute_receive :make_request
     end
   end
 
@@ -99,6 +106,8 @@ defmodule Fury.ClientServerTest do
 
       assert ClientServer.handle_info({:transport_data, "data"}, state) ==
         {:noreply, %{state | session: :updated_session}}
+
+      verify!()
     end
   end
 
@@ -118,17 +127,24 @@ defmodule Fury.ClientServerTest do
       {:ok, state: %{state | transport: self()}}
     end
 
-    test "returns unmodified state", %{state: state} do
+    test "when request is found increases state.request_id", %{state: state} do
+      stub Storm, :get_request, fn _, _ -> {:ok, {:think, 1}} end
+
+      assert ClientServer.handle_info(:make_request, state) ==
+        {:noreply, %{state | request_id: state.request_id + 1}}
+    end
+
+    test "when request not found unmodified state", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
 
-      assert ClientServer.handle_info({:make_request, 0}, state) ==
+      assert ClientServer.handle_info(:make_request, state) ==
         {:noreply, state}
     end
 
     test "invokes StormBridge to get request", %{state: state} do
       expect Storm, :get_request, fn _, _ -> {:error, :not_found} end
 
-      ClientServer.handle_info({:make_request, 0}, state)
+      ClientServer.handle_info(:make_request, state)
 
       verify!()
     end
@@ -139,7 +155,7 @@ defmodule Fury.ClientServerTest do
       expect Protocol, :format, fn {:push, "data"}, _ -> {:ok, "data"} end
       expect Transport, :push, fn _, "data" -> :ok end
 
-      ClientServer.handle_info({:make_request, 0}, state)
+      ClientServer.handle_info(:make_request, state)
 
       verify!()
     end
@@ -149,9 +165,9 @@ defmodule Fury.ClientServerTest do
       stub Protocol, :format, fn _, _ -> {:ok, "data"} end
       stub Transport, :push, fn _, _ -> :ok end
 
-      ClientServer.handle_info({:make_request, 0}, state)
+      ClientServer.handle_info(:make_request, state)
 
-      assert_receive {:make_request, 1}
+      assert_receive :make_request
     end
 
     test "does not make request on {:think, time}", %{state: state} do
@@ -160,7 +176,7 @@ defmodule Fury.ClientServerTest do
       stub Protocol, :format, fn _, _ -> send(pid, :protocol_called) end
       stub Transport, :push, fn _, _ -> send(pid, :tranport_called) end
 
-      ClientServer.handle_info({:make_request, 0}, state)
+      ClientServer.handle_info(:make_request, state)
 
       refute_receive _
     end
@@ -168,10 +184,10 @@ defmodule Fury.ClientServerTest do
     test "waits before next request on {:think, time}", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:think, 0}} end
 
-      ClientServer.handle_info({:make_request, 0}, state)
+      ClientServer.handle_info(:make_request, state)
 
-      refute_received {:make_request, 1}
-      assert_receive {:make_request, 1}
+      refute_received :make_request
+      assert_receive :make_request
     end
 
     test "does not make request when there aren't any", %{state: state} do
@@ -180,7 +196,7 @@ defmodule Fury.ClientServerTest do
       stub Protocol, :format, fn _, _ -> send(pid, :protocol_called) end
       stub Transport, :push, fn _, _ -> send(pid, :tranport_called) end
 
-      ClientServer.handle_info({:make_request, 0}, state)
+      ClientServer.handle_info(:make_request, state)
 
       refute_receive _
     end
@@ -189,7 +205,7 @@ defmodule Fury.ClientServerTest do
       stub Storm, :get_request, fn _, _ -> send(self(), :bridge_called) end
       state = %{state | transport: :not_connected}
 
-      ClientServer.handle_info({:make_request, 0}, state)
+      ClientServer.handle_info(:make_request, state)
 
       refute_receive _
     end
