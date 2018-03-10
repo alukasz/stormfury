@@ -3,9 +3,8 @@ defmodule Storm.DSL do
   alias Storm.DSL.Scenario
 
   def parse(dsl) do
-    with {:ok, ast} <- AST.build(dsl),
-         {:ok, scenario} <- Scenario.build(ast) do
-      {:ok, scenario}
+    with {:ok, ast} <- AST.build(dsl) do
+      Scenario.build(ast)
     else
       error -> error
     end
