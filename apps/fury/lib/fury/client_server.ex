@@ -9,7 +9,7 @@ defmodule Fury.ClientServer do
                request_id: 0, transport: :not_connected]
   end
 
-  def start_link([], opts) do
+  def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
   end
 

@@ -27,9 +27,9 @@ defmodule Fury.ClientServerTest do
     {:ok, start_opts: start_opts, state: state}
   end
 
-  describe "start_link/2" do
+  describe "start_link/1" do
     test "starts new ClientServer", %{start_opts: opts} do
-      assert {:ok, pid} = ClientServer.start_link([], opts)
+      assert {:ok, pid} = ClientServer.start_link(opts)
 
       assert is_pid(pid)
     end
