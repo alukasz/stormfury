@@ -22,7 +22,8 @@ defmodule Fury.ClientServerTest do
       session: %{},
       request_id: 0
     }
-    {:ok, _} = start_supervised({SessionServer, [session_id, "localhost"]})
+    session_opts = [session_id, "localhost", Transport, Protocol]
+    {:ok, _} = start_supervised({SessionServer, session_opts})
 
     {:ok, start_opts: start_opts, state: state}
   end

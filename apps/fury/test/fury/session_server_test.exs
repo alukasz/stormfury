@@ -4,11 +4,13 @@ defmodule Fury.SessionServerTest do
   import Mox
 
   alias Fury.SessionServer
-  alias Fury.Mock.Storm
+  alias Fury.Mock.{Protocol, Storm, Transport}
 
   describe "start_link/1" do
     test "starts new SessionServer" do
-      assert {:ok, pid} = SessionServer.start_link([make_ref(), "localhost"])
+      opts = [make_ref(), "localhost", Transport, Protocol]
+
+      assert {:ok, pid} = SessionServer.start_link(opts)
       assert is_pid(pid)
     end
   end
@@ -41,9 +43,9 @@ defmodule Fury.SessionServerTest do
 
   defp start_server(_) do
     id = make_ref()
-
-    {:ok, pid} = start_supervised({SessionServer, [id, "localhost"]})
-    allow Storm, self(), pid
+    opts = [id, "localhost", Transport, Protocol]
+    {:ok, pid} = start_supervised({SessionServer, opts})
+    allow(Storm, self(), pid)
 
     {:ok, session: id}
   end

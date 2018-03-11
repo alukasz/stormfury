@@ -5,11 +5,12 @@ defmodule Fury.SessionTest do
 
   alias Fury.Session
   alias Fury.SessionServer
-  alias Fury.Mock.Storm
+  alias Fury.Mock.{Protocol, Storm, Transport}
 
-  describe "new/2" do
+  describe "new/4" do
     test "starts new SessionServer" do
-      assert {:ok, pid} = Session.new(make_ref(), "localhost")
+      assert {:ok, pid} =
+        Session.new(make_ref(), "localhost", Transport, Protocol)
       assert is_pid(pid)
     end
   end
@@ -42,9 +43,9 @@ defmodule Fury.SessionTest do
 
   defp start_server(_) do
     id = make_ref()
-
-    {:ok, pid} = start_supervised({SessionServer, [id, "localhost"]})
-    allow Storm, self(), pid
+    opts = [id, "localhost", Transport, Protocol]
+    {:ok, pid} = start_supervised({SessionServer, opts})
+    allow(Storm, self(), pid)
 
     {:ok, session: id}
   end

@@ -5,7 +5,7 @@ defmodule Fury.SessionServer do
   @storm_bridge Application.get_env(:fury, :storm_bridge)
 
   defmodule State do
-    defstruct [:id, :url]
+    defstruct [:id, :url, :transport_mod, :protocol_mod]
   end
 
   def start_link([id | _] = opts) do
@@ -20,10 +20,12 @@ defmodule Fury.SessionServer do
     GenServer.call(name(id), {:get_request, request_id})
   end
 
-  def init([id, url]) do
+  def init([id, url, transport_mod, protocol_mod]) do
     state = %State{
       id: id,
-      url: url
+      url: url,
+      transport_mod: transport_mod,
+      protocol_mod: protocol_mod
     }
 
     {:ok, state}
