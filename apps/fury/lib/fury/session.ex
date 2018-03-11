@@ -1,12 +1,11 @@
 defmodule Fury.Session do
-  @storm_bridge Application.get_env(:fury, :storm_bridge)
+  alias Fury.SessionServer
 
-  # stub for testing until functionality is implemented
-  def get_url(_session_id) do
-    {:ok, "localhost"}
+  def new(id, name) do
+    SessionServer.start_link([id, name])
   end
 
-  def get_request(session_id, request_id) do
-    @storm_bridge.get_request(session_id, request_id)
-  end
+  defdelegate get_url(session_id), to: SessionServer
+
+  defdelegate get_request(session_id, request_id), to: SessionServer
 end

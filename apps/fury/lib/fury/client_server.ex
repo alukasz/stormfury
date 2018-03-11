@@ -27,7 +27,7 @@ defmodule Fury.ClientServer do
 
   def handle_info(:connect, state) do
     %{transport_mod: transport_mod, session_id: session_id} = state
-    {:ok, url} = Session.get_url(session_id)
+    url = Session.get_url(session_id)
 
     case Client.connect(transport_mod, url) do
       {:ok, transport} ->

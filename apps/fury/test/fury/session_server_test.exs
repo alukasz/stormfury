@@ -1,15 +1,14 @@
-defmodule Fury.SessionTest do
+defmodule Fury.SessionServerTest do
   use ExUnit.Case, async: true
 
   import Mox
 
-  alias Fury.Session
   alias Fury.SessionServer
   alias Fury.Mock.Storm
 
-  describe "new/2" do
+  describe "start_link/1" do
     test "starts new SessionServer" do
-      assert {:ok, pid} = Session.new(make_ref(), "localhost")
+      assert {:ok, pid} = SessionServer.start_link([make_ref(), "localhost"])
       assert is_pid(pid)
     end
   end
@@ -18,7 +17,7 @@ defmodule Fury.SessionTest do
     setup :start_server
 
     test "returns url", %{session: id} do
-      assert Session.get_url(id) == "localhost"
+      assert SessionServer.get_url(id) == "localhost"
     end
   end
 
@@ -28,13 +27,13 @@ defmodule Fury.SessionTest do
     test "returns request", %{session: id} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:think, 10}} end
 
-      assert Session.get_request(id, 0) == {:ok, {:think, 10}}
+      assert SessionServer.get_request(id, 0) == {:ok, {:think, 10}}
     end
 
     test "invokes StormBridge.get_request/2", %{session: id} do
       expect Storm, :get_request, fn ^id, 0 -> {:ok, {:think, 10}} end
 
-      Session.get_request(id, 0)
+      SessionServer.get_request(id, 0)
 
       verify!()
     end

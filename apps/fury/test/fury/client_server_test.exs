@@ -5,6 +5,7 @@ defmodule Fury.ClientServerTest do
 
   alias Fury.ClientServer
   alias Fury.ClientServer.State
+  alias Fury.SessionServer
   alias Fury.Mock.{Protocol, Storm, Transport}
 
   setup :set_mox_global
@@ -12,14 +13,16 @@ defmodule Fury.ClientServerTest do
     stub Protocol, :init, fn -> %{} end
     stub Transport, :connect, fn _, _ -> {:ok, self()} end
 
-    start_opts = [Transport, Protocol, :session_id]
+    session_id = make_ref()
+    start_opts = [Transport, Protocol, session_id]
     state = %State{
       transport_mod: Transport,
       protocol_mod: Protocol,
-      session_id: :session_id,
+      session_id: session_id,
       session: %{},
       request_id: 0
     }
+    {:ok, _} = start_supervised({SessionServer, [session_id, "localhost"]})
 
     {:ok, start_opts: start_opts, state: state}
   end
@@ -120,10 +123,6 @@ defmodule Fury.ClientServerTest do
 
   describe "handle_info({:make_request, id} state)" do
     setup %{state: state} do
-      # stub Protocol, :format, fn _, _ -> %{} end
-      # stub Transport, :push, fn _, _ -> :ok end
-      # stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
-
       {:ok, state: %{state | transport: self()}}
     end
 

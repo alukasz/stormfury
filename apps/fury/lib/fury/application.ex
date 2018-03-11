@@ -1,20 +1,17 @@
 defmodule Fury.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
 
   def start(_type, _args) do
-    # List all child processes to be supervised
     children = [
-      # Starts a worker by calling: Fury.Worker.start_link(arg)
-      # {Fury.Worker, arg},
+      {Registry, name: Fury.Session.Registry, keys: :unique}
+    ]
+    opts = [
+      strategy: :one_for_one,
+      name: Fury.Supervisor
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: Fury.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
