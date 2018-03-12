@@ -6,6 +6,8 @@ defmodule Storm.Application do
   def start(_type, _args) do
     children = [
       {Registry, name: Storm.Session.Registry, keys: :unique}
+      {Registry, name: Storm.Session.Registry, keys: :unique},
+      Storm.SessionSupervisor
     ]
     opts = [
       strategy: :one_for_one,
