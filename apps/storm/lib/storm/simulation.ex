@@ -4,15 +4,14 @@ defmodule Storm.Simulation do
     :url,
     :duration,
     :protocol_mod,
-    :supervisor,
     transport_mod: Fury.Transport.WebSocket,
     sessions: []
   ]
 
   alias Storm.Simulation
-  alias Storm.SimulationServer
+  alias Storm.SimulationsSupervisor
 
   def new(%Simulation{} = simulation) do
-    SimulationServer.start_link(simulation)
+    SimulationsSupervisor.start_child(simulation)
   end
 end

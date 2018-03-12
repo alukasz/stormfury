@@ -2,6 +2,7 @@ defmodule Storm.SimulationServerTest do
   use ExUnit.Case, async: true
 
   alias Storm.Session
+  alias Storm.SessionSupervisor
   alias Storm.Simulation
   alias Storm.SimulationServer
 
@@ -27,6 +28,12 @@ defmodule Storm.SimulationServerTest do
   end
 
   describe "handle_info(:start_sessions, state)" do
+    setup %{state: %{id: simulation_id}} do
+      {:ok, _} = start_supervised({SessionSupervisor, simulation_id})
+
+      :ok
+    end
+
     test "starts session", %{state: %{sessions: [%{id: session}]} = state} do
       SimulationServer.handle_info(:start_sessions, state)
 

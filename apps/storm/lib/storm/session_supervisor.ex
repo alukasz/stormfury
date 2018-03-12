@@ -1,20 +1,25 @@
 defmodule Storm.SessionSupervisor do
   use DynamicSupervisor
 
-  alias Storm.Session
   alias Storm.SessionServer
 
-  def start_link(_) do
-    DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
+  @registry Storm.SessionSupervisor.Registry
+
+  def start_link(simulation_id) do
+    DynamicSupervisor.start_link(__MODULE__, [], name: name(simulation_id))
   end
 
-  def start_child(session) do
+  def start_child(simulation_id, session) do
     child_spec = {SessionServer, session}
 
-    DynamicSupervisor.start_child(__MODULE__, child_spec)
+    DynamicSupervisor.start_child(name(simulation_id), child_spec)
   end
 
   def init(_) do
     DynamicSupervisor.init(strategy: :one_for_one)
+  end
+
+  defp name(id) do
+    {:via, Registry, {@registry, id}}
   end
 end

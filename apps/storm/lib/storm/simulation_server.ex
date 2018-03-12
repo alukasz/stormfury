@@ -13,8 +13,8 @@ defmodule Storm.SimulationServer do
     {:ok, state}
   end
 
-  def handle_info(:start_sessions, %{sessions: sessions} = state) do
-    Enum.each(sessions, &Session.new(&1))
+  def handle_info(:start_sessions, %{id: id, sessions: sessions} = state) do
+    Enum.each(sessions, &Session.new(id, &1))
 
     {:noreply, state}
   end

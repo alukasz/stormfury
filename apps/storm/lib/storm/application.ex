@@ -6,6 +6,7 @@ defmodule Storm.Application do
   def start(_type, _args) do
     children = [
       {Registry, name: Storm.Simulation.Registry, keys: :unique},
+      {Registry, name: Storm.SessionSupervisor.Registry, keys: :unique},
       {Registry, name: Storm.Session.Registry, keys: :unique},
       Storm.SimulationsSupervisor
     ]

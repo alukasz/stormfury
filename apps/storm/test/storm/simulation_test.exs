@@ -13,8 +13,8 @@ defmodule Storm.SimulationTest do
 
   describe "new/1" do
     test "starts new Simulation", %{state: %{id: id} = state} do
-      assert {:ok, pid} = Simulation.new(state)
-      assert [{^pid, _}] = Registry.lookup(Storm.Simulation.Registry, id)
+      assert {:ok, _} = Simulation.new(state)
+      assert [{_, _}] = Registry.lookup(Storm.Simulation.Registry, id)
     end
   end
 end
