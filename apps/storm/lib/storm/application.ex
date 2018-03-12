@@ -7,7 +7,7 @@ defmodule Storm.Application do
     children = [
       {Registry, name: Storm.Simulation.Registry, keys: :unique},
       {Registry, name: Storm.Session.Registry, keys: :unique},
-      Storm.SessionSupervisor
+      Storm.SimulationsSupervisor
     ]
     opts = [
       strategy: :one_for_one,

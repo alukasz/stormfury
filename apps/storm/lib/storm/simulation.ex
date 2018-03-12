@@ -4,6 +4,7 @@ defmodule Storm.Simulation do
     :url,
     :duration,
     :protocol_mod,
+    :supervisor,
     transport_mod: Fury.Transport.WebSocket,
     sessions: []
   ]
