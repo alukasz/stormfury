@@ -7,8 +7,8 @@ defmodule Storm.SessionServer do
     GenServer.start_link(__MODULE__, state, name: name(id))
   end
 
-  def get_request(session, index) do
-    GenServer.call(name(session), {:get_request, index})
+  def name(id) do
+    {:via, Registry, {@registry, id}}
   end
 
   def init(state) do
@@ -23,9 +23,5 @@ defmodule Storm.SessionServer do
       end
 
     {:reply, reply, state}
-  end
-
-  defp name(id) do
-    {:via, Registry, {@registry, id}}
   end
 end

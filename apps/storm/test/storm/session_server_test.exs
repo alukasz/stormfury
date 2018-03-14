@@ -22,20 +22,22 @@ defmodule Storm.SessionServerTest do
     end
   end
 
-  describe "get_request/2" do
-    setup %{state: %{id: id} = state} do
-      {:ok, _} = start_supervised({SessionServer, state})
+  describe "name/1" do
+    test "returns :via tuple for name registration" do
+      assert SessionServer.name(:id) ==
+        {:via, Registry, {Storm.Session.Registry, :id}}
+    end
+  end
 
-      {:ok, session: id}
+  describe "handle_call({:get_request, index}, _, _)" do
+    test "replies with request for given id", %{state: state} do
+      assert SessionServer.handle_call({:get_request, 0}, :from, state) ==
+        {:reply, {:ok, {:push, "data"}}, state}
     end
 
-    test "returns request session id and index", %{session: session} do
-      assert SessionServer.get_request(session, 0) == {:ok, {:push, "data"}}
-      assert SessionServer.get_request(session, 1) == {:ok, {:think, 10}}
-    end
-
-    test "returns error tuple when request not found", %{session: session} do
-      assert SessionServer.get_request(session, 10) == {:error, :not_found}
+    test "replies with error when request not found", %{state: state} do
+      assert SessionServer.handle_call({:get_request, 2}, :from, state) ==
+        {:reply, {:error, :not_found}, state}
     end
   end
 end

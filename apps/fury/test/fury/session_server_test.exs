@@ -6,47 +6,53 @@ defmodule Fury.SessionServerTest do
   alias Fury.SessionServer
   alias Fury.Mock.{Protocol, Storm, Transport}
 
+  setup do
+    state = %SessionServer.State{
+      id: make_ref(),
+      url: "localhost",
+    }
+
+    {:ok, state: state}
+  end
+
   describe "start_link/1" do
     test "starts new SessionServer" do
-      opts = [make_ref(), "localhost", Transport, Protocol]
+      id = make_ref()
+      opts = [id, "localhost", Transport, Protocol]
 
       assert {:ok, pid} = SessionServer.start_link(opts)
-      assert is_pid(pid)
+      assert [{^pid, _}] = Registry.lookup(Fury.Session.Registry, id)
     end
   end
 
-  describe "get_url/1" do
-    setup :start_server
-
-    test "returns url", %{session: id} do
-      assert SessionServer.get_url(id) == "localhost"
+  describe "name/1" do
+    test "returns :via tuple for name registration" do
+      assert SessionServer.name(:id) ==
+        {:via, Registry, {Fury.Session.Registry, :id}}
     end
   end
 
-  describe "get_request/2" do
-    setup :start_server
+  describe "handle_call(:get_url, _, _)" do
+    test "returns url", %{state: state} do
+      assert SessionServer.handle_call(:get_url, :from, state) ==
+        {:reply, "localhost", state}
+    end
+  end
 
-    test "returns request", %{session: id} do
+  describe "handle_call({:get_request, id}, _, _)" do
+    test "replies with request", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:think, 10}} end
 
-      assert SessionServer.get_request(id, 0) == {:ok, {:think, 10}}
+      assert SessionServer.handle_call({:get_request, 0}, :from, state) ==
+        {:reply, {:ok, {:think, 10}}, state}
     end
 
-    test "invokes StormBridge.get_request/2", %{session: id} do
-      expect Storm, :get_request, fn ^id, 0 -> {:ok, {:think, 10}} end
+    test "invokes StormBridge.get_request/2", %{state: state} do
+      expect Storm, :get_request, fn _, _ -> {:ok, {:think, 10}} end
 
-      SessionServer.get_request(id, 0)
+      SessionServer.handle_call({:get_request, 0}, :from, state)
 
       verify!()
     end
-  end
-
-  defp start_server(_) do
-    id = make_ref()
-    opts = [id, "localhost", Transport, Protocol]
-    {:ok, pid} = start_supervised({SessionServer, opts})
-    allow(Storm, self(), pid)
-
-    {:ok, session: id}
   end
 end

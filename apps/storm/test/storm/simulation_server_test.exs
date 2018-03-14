@@ -10,7 +10,9 @@ defmodule Storm.SimulationServerTest do
     id = make_ref()
     state = %Simulation{
       id: id,
-      sessions: [%Session{id: make_ref(), simulation_id: id}]
+      sessions: [%Session{id: make_ref(), simulation_id: id}],
+      nodes: [:nonode]
+
     }
 
     {:ok, state: state}
@@ -25,6 +27,20 @@ defmodule Storm.SimulationServerTest do
       SimulationServer.init(state)
 
       assert_receive :start_sessions
+    end
+  end
+
+  describe "name/1" do
+    test "returns :via tuple for name registration" do
+      assert SimulationServer.name(:id) ==
+      {:via, Registry, {Storm.Simulation.Registry, :id}}
+    end
+  end
+
+  describe "handle_call(:get_node, _, _)" do
+    test "replies with random node", %{state: state} do
+      assert SimulationServer.handle_call(:get_node, :from, state) ==
+        {:reply, {:ok, :nonode}, state}
     end
   end
 

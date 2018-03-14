@@ -12,12 +12,8 @@ defmodule Fury.SessionServer do
     GenServer.start_link(__MODULE__, opts, name: name(id))
   end
 
-  def get_url(id) do
-    GenServer.call(name(id), :get_url)
-  end
-
-  def get_request(id, request_id) do
-    GenServer.call(name(id), {:get_request, request_id})
+  def name(id) do
+    {:via, Registry, {@registry, id}}
   end
 
   def init([id, url, transport_mod, protocol_mod]) do
@@ -39,9 +35,5 @@ defmodule Fury.SessionServer do
     request = @storm_bridge.get_request(id, request_id)
 
     {:reply, request, state}
-  end
-
-  defp name(id) do
-    {:via, Registry, {@registry, id}}
   end
 end

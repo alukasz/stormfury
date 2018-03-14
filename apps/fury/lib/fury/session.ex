@@ -6,7 +6,11 @@ defmodule Fury.Session do
     SessionSupervisor.start_child(id, url, transport_mod, protocol_mod)
   end
 
-  defdelegate get_url(session_id), to: SessionServer
+  def get_url(id) do
+    GenServer.call(SessionServer.name(id), :get_url)
+  end
 
-  defdelegate get_request(session_id, request_id), to: SessionServer
+  def get_request(id, request_id) do
+    GenServer.call(SessionServer.name(id), {:get_request, request_id})
+  end
 end

@@ -7,8 +7,8 @@ defmodule Storm.SimulationServer do
     GenServer.start_link(__MODULE__, state, name: name(id))
   end
 
-  def get_node(id) do
-    GenServer.call(name(id), :get_node)
+  def name(id) do
+    {:via, Registry, {Storm.Simulation.Registry, id}}
   end
 
   def init(state) do
@@ -17,17 +17,14 @@ defmodule Storm.SimulationServer do
     {:ok, state}
   end
 
+  def handle_call(:get_node, _, %{nodes: nodes} = state) do
+    {:reply, {:ok, Enum.random(nodes)}, state}
+  end
+
   def handle_info(:start_sessions, %{sessions: sessions} = state) do
     Enum.each(sessions, &Session.new(&1))
 
     {:noreply, state}
   end
 
-  def handle_call(:get_node, _, %{nodes: nodes} = state) do
-    {:reply, {:ok, Enum.random(nodes)}, state}
-  end
-
-  defp name(id) do
-    {:via, Registry, {Storm.Simulation.Registry, id}}
-  end
 end

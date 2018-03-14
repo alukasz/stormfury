@@ -9,5 +9,7 @@ defmodule Storm.Session do
     SessionSupervisor.start_child(session)
   end
 
-  defdelegate get_request(id, index), to: SessionServer
+  def get_request(session, index) do
+    GenServer.call(SessionServer.name(session), {:get_request, index})
+  end
 end
