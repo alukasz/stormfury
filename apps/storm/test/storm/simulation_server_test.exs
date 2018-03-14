@@ -7,9 +7,10 @@ defmodule Storm.SimulationServerTest do
   alias Storm.SimulationServer
 
   setup do
+    id = make_ref()
     state = %Simulation{
-      id: make_ref(),
-      sessions: [%Session{id: make_ref()}]
+      id: id,
+      sessions: [%Session{id: make_ref(), simulation_id: id}]
     }
 
     {:ok, state: state}
@@ -34,10 +35,10 @@ defmodule Storm.SimulationServerTest do
       :ok
     end
 
-    test "starts session", %{state: %{sessions: [%{id: session}]} = state} do
+    test "starts session", %{state: %{sessions: [%{id: session_id}]} = state} do
       SimulationServer.handle_info(:start_sessions, state)
 
-      assert [{_, _}] = Registry.lookup(Storm.Session.Registry, session)
+      assert [{_, _}] = Registry.lookup(Storm.Session.Registry, session_id)
     end
   end
 end

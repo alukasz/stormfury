@@ -7,19 +7,18 @@ defmodule Storm.SessionTest do
   setup do
     state = %Session{
       id: make_ref(),
+      simulation_id: make_ref(),
       scenario: [push: "data", think: 10]
     }
-    simulation_id = make_ref()
-    {:ok, _} = start_supervised({Storm.SessionSupervisor, simulation_id})
+    {:ok, _} = start_supervised({Storm.SessionSupervisor, state.simulation_id})
 
-    {:ok, state: state, simulation_id: simulation_id}
+    {:ok, state: state}
   end
 
-  describe "new/2" do
-    test "starts new SessionServer", %{simulation_id: id, state: state} do
-      assert {:ok, pid} = Session.new(id, state)
-      assert [{^pid, _}] =
-        Registry.lookup(Storm.Session.Registry, state.id)
+  describe "new/1" do
+    test "starts new SessionServer", %{state: state} do
+      assert {:ok, pid} = Session.new(state)
+      assert [{^pid, _}] = Registry.lookup(Storm.Session.Registry, state.id)
     end
   end
 

@@ -3,10 +3,10 @@ defmodule Storm.Session do
   alias Storm.SessionServer
   alias Storm.SessionSupervisor
 
-  defstruct [:id, :clients, :arrival_rate, :scenario]
+  defstruct [:id, :simulation_id, :clients, :arrival_rate, :scenario]
 
-  def new(simulation_id, %Session{} = session) do
-    SessionSupervisor.start_child(simulation_id, session)
+  def new(%Session{} = session) do
+    SessionSupervisor.start_child(session)
   end
 
   defdelegate get_request(id, index), to: SessionServer

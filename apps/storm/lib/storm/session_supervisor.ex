@@ -9,7 +9,7 @@ defmodule Storm.SessionSupervisor do
     DynamicSupervisor.start_link(__MODULE__, [], name: name(simulation_id))
   end
 
-  def start_child(simulation_id, session) do
+  def start_child(%{simulation_id: simulation_id} = session) do
     child_spec = {SessionServer, session}
 
     DynamicSupervisor.start_child(name(simulation_id), child_spec)
