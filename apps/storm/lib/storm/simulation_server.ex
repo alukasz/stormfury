@@ -3,26 +3,36 @@ defmodule Storm.SimulationServer do
 
   alias Storm.Session
 
-  def start_link(%{id: id} = state) do
-    GenServer.start_link(__MODULE__, state, name: name(id))
+  defmodule State do
+    defstruct simulation: nil, clients_started: 0
+  end
+
+  def start_link(%{id: id} = simulation) do
+    GenServer.start_link(__MODULE__, simulation, name: name(id))
   end
 
   def name(id) do
     {:via, Registry, {Storm.Simulation.Registry, id}}
   end
 
-  def init(state) do
+  def init(simulation) do
     send(self(), :start_sessions)
 
-    {:ok, state}
+    {:ok, %State{simulation: simulation}}
   end
 
-  def handle_call(:get_node, _, %{nodes: nodes} = state) do
+  def handle_call(:get_node, _, %{simulation: %{nodes: nodes}} = state) do
     {:reply, {:ok, Enum.random(nodes)}, state}
   end
+  def handle_call({:get_ids, number}, _, %{clients_started: started} = state) do
+    new_started = started + number
+    range = (started + 1)..new_started
 
-  def handle_info(:start_sessions, %{sessions: sessions} = state) do
-    Enum.each(sessions, &Session.new(&1))
+    {:reply, range, %{state | clients_started: new_started}}
+  end
+
+  def handle_info(:start_sessions, state) do
+    Enum.each(state.simulation.sessions, &Session.new(&1))
 
     {:noreply, state}
   end

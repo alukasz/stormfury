@@ -20,4 +20,8 @@ defmodule Storm.Simulation do
   def get_node(id) do
     GenServer.call(SimulationServer.name(id), :get_node)
   end
+
+  def get_ids(id, number) do
+    GenServer.call(SimulationServer.name(id), {:get_ids, number})
+  end
 end

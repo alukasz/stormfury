@@ -5,35 +5,36 @@ defmodule Storm.SimulationServerTest do
   alias Storm.SessionSupervisor
   alias Storm.Simulation
   alias Storm.SimulationServer
+  alias Storm.SimulationServer.State
 
   setup do
     id = make_ref()
-    state = %Simulation{
+    simulation = %Simulation{
       id: id,
       sessions: [%Session{id: make_ref(), simulation_id: id}],
       nodes: [:nonode]
-
     }
+    state = %State{simulation: simulation}
 
-    {:ok, state: state}
-  end
-
-  describe "init/1" do
-    test "initializes state", %{state: state} do
-      assert SimulationServer.init(state) == {:ok, state}
-    end
-
-    test "sends message to start sessions", %{state: state} do
-      SimulationServer.init(state)
-
-      assert_receive :start_sessions
-    end
+    {:ok, state: state, simulation: simulation}
   end
 
   describe "name/1" do
     test "returns :via tuple for name registration" do
       assert SimulationServer.name(:id) ==
-      {:via, Registry, {Storm.Simulation.Registry, :id}}
+        {:via, Registry, {Storm.Simulation.Registry, :id}}
+    end
+  end
+
+  describe "init/1" do
+    test "initializes state", %{simulation: simulation, state: state} do
+      assert SimulationServer.init(simulation) == {:ok, state}
+    end
+
+    test "sends message to start sessions", %{simulation: simulation} do
+      SimulationServer.init(simulation)
+
+      assert_receive :start_sessions
     end
   end
 
@@ -44,14 +45,28 @@ defmodule Storm.SimulationServerTest do
     end
   end
 
+  describe "handle_call({:get_ids, number}, _, _)" do
+    test "replies with range of clients ids to start", %{state: state} do
+      assert {:reply, 1..10, _} =
+        SimulationServer.handle_call({:get_ids, 10}, :from, state)
+    end
+
+    test "increases number of clients started", %{state: state} do
+      assert {_, _, %{clients_started: 10}} =
+        SimulationServer.handle_call({:get_ids, 10}, :from, state)
+    end
+  end
+
   describe "handle_info(:start_sessions, state)" do
-    setup %{state: %{id: simulation_id}} do
+    setup %{simulation: %{id: simulation_id}} do
       {:ok, _} = start_supervised({SessionSupervisor, simulation_id})
 
       :ok
     end
 
-    test "starts session", %{state: %{sessions: [%{id: session_id}]} = state} do
+    test "starts session", %{state: state} do
+      %{simulation: %{sessions: [%{id: session_id}]}} = state
+
       SimulationServer.handle_info(:start_sessions, state)
 
       assert [{_, _}] = Registry.lookup(Storm.Session.Registry, session_id)

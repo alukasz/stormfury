@@ -28,6 +28,14 @@ defmodule Storm.SimulationTest do
     end
   end
 
+  describe "get_ids/1" do
+    setup :start_server
+
+    test "returns range of clients ids", %{id: id} do
+      assert 1..10 = Simulation.get_ids(id, 10)
+    end
+  end
+
   defp start_server(%{state: state}) do
     {:ok, _} = start_supervised({SimulationServer, state})
 
