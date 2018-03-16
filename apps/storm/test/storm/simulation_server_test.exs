@@ -1,11 +1,14 @@
 defmodule Storm.SimulationServerTest do
   use ExUnit.Case, async: true
 
+  import Mox
+
   alias Storm.Session
   alias Storm.SessionSupervisor
   alias Storm.Simulation
   alias Storm.SimulationServer
   alias Storm.SimulationServer.State
+  alias Storm.Mock.Fury
 
   setup do
     id = make_ref()
@@ -51,18 +54,31 @@ defmodule Storm.SimulationServerTest do
   end
 
   describe "handle_info(:start_sessions, state)" do
-    setup %{simulation: simulation} do
+    setup %{state: state, simulation: simulation} do
       {:ok, _} = start_supervised({SessionSupervisor, simulation})
+      nodes = [:n1, :n2, :n3]
+      session = %Session{id: make_ref(), simulation_id: simulation.id}
+      simulation = %{simulation | nodes: nodes, sessions: [session]}
+      state = %{state | simulation: simulation}
 
-      :ok
+      {:ok, state: state, simulation: simulation}
     end
 
-    test "starts session", %{state: state} do
-      %{simulation: %{sessions: [%{id: session_id}]}} = state
+    test "starts local sessions", %{state: state, simulation: simulation} do
+      stub Fury, :start_session, fn _, _ -> :ok end
+      %{sessions: [%{id: session_id}]} = simulation
 
       SimulationServer.handle_info(:start_sessions, state)
 
       assert [{_, _}] = Registry.lookup(Storm.Session.Registry, session_id)
+    end
+
+    test "starts remote sessions", %{state: state} do
+      expect Fury, :start_session, 3, fn _, _ -> :ok end
+
+      SimulationServer.handle_info(:start_sessions, state)
+
+      verify!()
     end
   end
 end
