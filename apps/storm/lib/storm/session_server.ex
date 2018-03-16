@@ -54,8 +54,8 @@ defmodule Storm.SessionServer do
 
   defp do_start_clients(_, _, 0), do: :ok
   defp do_start_clients(simulation_id, session_id, to_start) do
-    clients = Simulation.get_ids(simulation_id, to_start)
-    LoadBalancer.start_clients(simulation_id, session_id, clients)
+    ids = Simulation.get_ids(simulation_id, to_start)
+    LoadBalancer.start_clients(simulation_id, session_id, ids)
   end
 
   defp schedule_start_clients do

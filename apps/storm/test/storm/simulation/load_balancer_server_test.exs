@@ -39,28 +39,28 @@ defmodule Storm.Simulation.LoadBalancerServerTest do
   describe "handle_call({:start_clients, session_id, ids}, _, _)" do
     test "replies :ok", %{state: state} do
       assert {:reply, :ok, _} =
-        LoadBalancerServer.handle_call({:start_clients, :id, 1..10}, :from, state)
+        LoadBalancerServer.handle_call({:add_clients, []}, :from, state)
     end
 
-    test "adds clients for session to to_start", %{state: state} do
-      message = {:start_clients, :id, 1..10}
+    test "adds clients state.to_start", %{state: state} do
+      message = {:add_clients, id: 1, id: 2}
 
       {_, _, state} = LoadBalancerServer.handle_call(message, :from, state)
 
-      assert %{to_start: %{id: [1..10]}} = state
+      assert %{to_start: [id: 1, id: 2]} = state
     end
 
-    test "appends clients to start for session", %{state: state} do
-      state = %{state | to_start: %{id: [1..10]}}
-      message = {:start_clients, :id, 11..20}
+    test "append clients existing clients in state.to_start", %{state: state} do
+      state = %{state | to_start: [id1: 1, id1: 2]}
+      message = {:add_clients, id2: 1, id2: 2}
 
       {_, _, state} = LoadBalancerServer.handle_call(message, :from, state)
 
-      assert %{to_start: %{id: [1..10, 11..20]}} = state
+      assert %{to_start: [id1: 1, id1: 2, id2: 1, id2: 2]} = state
     end
   end
 
-  describe "handle_info(:do_start_clients, _)" do
+  describe "handle_info(:start_clients, _)" do
     setup do
       {:ok, agent} = start_supervised({Agent, fn -> {%{}, %{}} end})
 
@@ -69,89 +69,76 @@ defmodule Storm.Simulation.LoadBalancerServerTest do
 
     test "does not reply", %{state: state} do
       stub Fury, :start_clients, fn _, _, _ -> :ok end
-      state = %{state | to_start: %{id1: [1..10, 11..20], id2: [1..20]}}
-      state = %{state | nodes: [1, 2, 3, 4, 5]}
 
-      {:noreply, _} = LoadBalancerServer.handle_info(:do_start_clients, state)
+      assert {:noreply, _} =
+        LoadBalancerServer.handle_info(:start_clients, state)
     end
 
     test "invokes FuryBridge to start clients", %{state: state} do
       expect Fury, :start_clients, fn _, _, _ -> :ok end
-      state = %{state | to_start: %{session: [1..10]}}
+      state = %{state | to_start: [s1: 1]}
 
-      {:noreply, _} = LoadBalancerServer.handle_info(:do_start_clients, state)
+      {:noreply, _} = LoadBalancerServer.handle_info(:start_clients, state)
 
       verify!()
     end
 
     test "does not invokes FuryBridge when no clients", %{state: state} do
-      stub Fury, :start_clients, fn _, _, _ -> send(self(), :called)end
-      state = %{state |to_start: %{}}
+      stub Fury, :start_clients, fn _, _, _ -> send(self(), :called) end
 
-      {:noreply, _} = LoadBalancerServer.handle_info(:do_start_clients, state)
+      LoadBalancerServer.handle_info(:start_clients, state)
 
       refute_receive _
     end
 
+    test "returns empty state.to_start", %{state: state} do
+      stub Fury, :start_clients, fn _, _, _ -> :ok end
+      state = %{state | to_start: [s1: 1, s2: 1]}
+
+      assert {_, %{to_start: []}} =
+        LoadBalancerServer.handle_info(:start_clients, state)
+    end
+
     test "no clients to start", %{state: state, agent: agent} do
-      stub_fury(agent)
-      state = %{state | to_start: %{}}
+      track_started_clients(agent)
+      state = %{state | to_start: []}
 
-      LoadBalancerServer.handle_info(:do_start_clients, state)
+      LoadBalancerServer.handle_info(:start_clients, state)
 
-      assert get_nodes(agent) == %{}
-      assert get_sessions(agent) == %{}
+      assert started_per_session(agent) == []
     end
 
     test "starts clients from sessions", %{state: state, agent: agent} do
-      stub_fury(agent)
-      state = %{state | to_start: %{s1: [1..10], s2: [1..40, 1..20]}}
+      track_started_clients(agent)
+      state = %{state | to_start: [s1: 1, s1: 2, s2: 1, s2: 2, s2: 3]}
 
-      LoadBalancerServer.handle_info(:do_start_clients, state)
+      LoadBalancerServer.handle_info(:start_clients, state)
 
-      assert started_sessions(agent) == [s1: 10, s2: 40]
+      assert started_per_session(agent) == [s1: 2, s2: 3]
     end
 
-    test "returns state.to_start without started sessions", %{state: state} do
-      stub Fury, :start_clients, fn _, _, _ -> :ok end
-      state = %{state | to_start: %{s1: [1..5], s2: [1..40, 1..20]}}
+    @started_clients_per_node Enum.with_index([
+      30..30, 15..15, 10..10, 7..8, 6..6,
+      5..5, 4..5, 4..3, 4..3, 3..3
+    ], 1)
 
-      assert {_, %{to_start: %{s2: [1..20]}}} =
-        LoadBalancerServer.handle_info(:do_start_clients, state)
-    end
-
-    started_clients_per_node = [
-      [30],
-      [15, 15],
-      [10, 10, 10],
-      [8, 8, 7, 7],
-      [6, 6, 6, 6, 6],
-      [5, 5, 5, 5, 5, 5],
-      [5, 5, 4, 4, 4, 4, 4],
-      [4, 4, 4, 4, 4, 4, 3, 3],
-      [4, 4, 4, 3, 3, 3, 3, 3, 3],
-      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
-    ]
-
-    Enum.each started_clients_per_node, fn per_node ->
-      test "splits clients between #{length(per_node)} nodes",
+    Enum.each @started_clients_per_node, fn {range, nodes} ->
+      test "splits clients between #{nodes} nodes",
           %{state: state, agent: agent} do
-        stub_fury(agent)
-        nodes = for i <- 1..length(unquote(per_node)), do: :"n#{i}"
-        state = %{state | nodes: nodes, to_start: %{s1: [1..10], s2: [1..20]}}
+        track_started_clients(agent)
+        nodes = for i <- 1..unquote(nodes), do: :"n#{i}"
+        to_start = List.duplicate({:session, 1}, 30)
+        state = %{state | nodes: nodes, to_start: to_start}
 
-        LoadBalancerServer.handle_info(:do_start_clients, state)
+        LoadBalancerServer.handle_info(:start_clients, state)
 
-        started = started_nodes(agent)
-        expected = Enum.zip(nodes, unquote(per_node))
-        Enum.each started, fn node ->
-          assert node in expected, "expected: #{inspect expected}\n" <>
-            "started:  #{inspect started}"
+        Enum.each started_per_node(agent), fn {_, amount} ->
+          assert amount in unquote(Macro.escape(range))
         end
       end
     end
 
-    defp stub_fury(agent) do
+    defp track_started_clients(agent) do
       stub Fury, :start_clients, fn node, session, clients ->
         updater = &Enum.concat(&1, clients)
         Agent.update agent, fn {nodes, sessions}->
@@ -163,13 +150,13 @@ defmodule Storm.Simulation.LoadBalancerServerTest do
       end
     end
 
-    defp started_sessions(agent) do
+    defp started_per_session(agent) do
       agent
       |> get_sessions()
       |> count_started_clients()
     end
 
-    defp started_nodes(agent) do
+    defp started_per_node(agent) do
       agent
       |> get_nodes()
       |> count_started_clients()

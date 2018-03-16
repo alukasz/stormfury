@@ -99,7 +99,7 @@ defmodule Storm.SessionServerTest do
     end
 
     defp wait_for_lb(lb) do
-      send(lb, :do_start_clients)
+      send(lb, :start_clients)
       :timer.sleep(50)
     end
   end

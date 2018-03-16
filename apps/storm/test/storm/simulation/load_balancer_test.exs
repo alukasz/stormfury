@@ -14,7 +14,7 @@ defmodule Storm.Simulation.LoadBalancerTest do
 
   describe "start_clients/3" do
     test "returns :ok", %{id: id} do
-      assert LoadBalancer.start_clients(id, :session, 1..100) == :ok
+      assert LoadBalancer.start_clients(id, :session, 1..10) == :ok
     end
   end
 end
