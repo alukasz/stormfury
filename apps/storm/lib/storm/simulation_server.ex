@@ -21,9 +21,6 @@ defmodule Storm.SimulationServer do
     {:ok, %State{simulation: simulation}}
   end
 
-  def handle_call(:get_node, _, %{simulation: %{nodes: nodes}} = state) do
-    {:reply, {:ok, Enum.random(nodes)}, state}
-  end
   def handle_call({:get_ids, number}, _, %{clients_started: started} = state) do
     new_started = started + number
     range = (started + 1)..new_started

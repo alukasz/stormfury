@@ -38,13 +38,6 @@ defmodule Storm.SimulationServerTest do
     end
   end
 
-  describe "handle_call(:get_node, _, _)" do
-    test "replies with random node", %{state: state} do
-      assert SimulationServer.handle_call(:get_node, :from, state) ==
-        {:reply, {:ok, :nonode}, state}
-    end
-  end
-
   describe "handle_call({:get_ids, number}, _, _)" do
     test "replies with range of clients ids to start", %{state: state} do
       assert {:reply, 1..10, _} =

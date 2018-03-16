@@ -17,10 +17,6 @@ defmodule Storm.Simulation do
     SimulationsSupervisor.start_child(simulation)
   end
 
-  def get_node(id) do
-    GenServer.call(SimulationServer.name(id), :get_node)
-  end
-
   def get_ids(id, number) do
     GenServer.call(SimulationServer.name(id), {:get_ids, number})
   end

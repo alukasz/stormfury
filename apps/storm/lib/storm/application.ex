@@ -7,6 +7,7 @@ defmodule Storm.Application do
     children = [
       {Registry, name: Storm.Simulation.Registry, keys: :unique},
       {Registry, name: Storm.SessionSupervisor.Registry, keys: :unique},
+      {Registry, name: Storm.LoadBalancer.Registry, keys: :unique},
       {Registry, name: Storm.Session.Registry, keys: :unique},
       Storm.SimulationsSupervisor
     ]

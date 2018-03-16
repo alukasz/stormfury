@@ -20,14 +20,6 @@ defmodule Storm.SimulationTest do
     end
   end
 
-  describe "get_node/1" do
-    setup :start_server
-
-    test "returns one of nodes for simulation", %{id: id} do
-      assert {:ok, :nonode} = Simulation.get_node(id)
-    end
-  end
-
   describe "get_ids/1" do
     setup :start_server
 
