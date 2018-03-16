@@ -9,9 +9,9 @@ defmodule Storm.SimulationSuperisor do
 
   def init(simulation) do
     children = [
-      {Storm.SimulationServer, simulation},
       {Storm.SessionSupervisor, simulation},
-      {Storm.Simulation.LoadBalancerServer, simulation}
+      {Storm.Simulation.LoadBalancerServer, simulation},
+      {Storm.SimulationServer, simulation},
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

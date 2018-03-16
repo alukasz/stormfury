@@ -51,8 +51,8 @@ defmodule Storm.SimulationServerTest do
   end
 
   describe "handle_info(:start_sessions, state)" do
-    setup %{simulation: %{id: simulation_id}} do
-      {:ok, _} = start_supervised({SessionSupervisor, simulation_id})
+    setup %{simulation: simulation} do
+      {:ok, _} = start_supervised({SessionSupervisor, simulation})
 
       :ok
     end

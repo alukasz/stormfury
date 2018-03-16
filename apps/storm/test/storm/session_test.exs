@@ -3,6 +3,7 @@ defmodule Storm.SessionTest do
 
   alias Storm.Session
   alias Storm.SessionServer
+  alias Storm.Simulation
 
   setup do
     state = %Session{
@@ -10,7 +11,8 @@ defmodule Storm.SessionTest do
       simulation_id: make_ref(),
       scenario: [push: "data", think: 10]
     }
-    {:ok, _} = start_supervised({Storm.SessionSupervisor, state.simulation_id})
+    simulaion = %Simulation{id: state.simulation_id}
+    {:ok, _} = start_supervised({Storm.SessionSupervisor, simulaion})
 
     {:ok, state: state}
   end

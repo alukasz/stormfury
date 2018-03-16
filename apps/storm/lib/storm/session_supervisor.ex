@@ -1,12 +1,13 @@
 defmodule Storm.SessionSupervisor do
   use DynamicSupervisor
 
+  alias Storm.Simulation
   alias Storm.SessionServer
 
   @registry Storm.SessionSupervisor.Registry
 
-  def start_link(simulation_id) do
-    DynamicSupervisor.start_link(__MODULE__, [], name: name(simulation_id))
+  def start_link(%Simulation{id: id}) do
+    DynamicSupervisor.start_link(__MODULE__, [], name: name(id))
   end
 
   def start_child(%{simulation_id: simulation_id} = session) do
