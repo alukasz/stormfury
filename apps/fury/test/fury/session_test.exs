@@ -5,6 +5,7 @@ defmodule Fury.SessionTest do
 
   alias Fury.Session
   alias Fury.SessionServer
+  alias Fury.ClientSupervisor
   alias Fury.Mock.{Protocol, Storm, Transport}
 
   describe "new/4" do
@@ -15,11 +16,18 @@ defmodule Fury.SessionTest do
     end
   end
 
-  describe "get_url/1" do
+  describe "start_clients/2" do
     setup :start_server
+    setup :terminate_clients
+    setup :set_mox_global
 
-    test "returns url", %{session: id} do
-      assert Session.get_url(id) == "localhost"
+    test "starts clients", %{session: id} do
+      stub Protocol, :init, fn -> %{} end
+      stub Transport, :connect, fn _, _ -> {:error, :timeout} end
+
+      :ok = Session.start_clients(id, [1, 2, 3])
+
+      assert length(DynamicSupervisor.which_children(ClientSupervisor)) == 3
     end
   end
 
@@ -48,5 +56,13 @@ defmodule Fury.SessionTest do
     allow(Storm, self(), pid)
 
     {:ok, session: id}
+  end
+
+  defp terminate_clients(_) do
+    ClientSupervisor
+    |> DynamicSupervisor.which_children()
+    |> Enum.each(fn {_, pid, _, _} ->
+      DynamicSupervisor.terminate_child(ClientSupervisor, pid)
+    end)
   end
 end

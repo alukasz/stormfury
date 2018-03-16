@@ -1,6 +1,8 @@
 defmodule Fury.SessionServer do
   use GenServer
 
+  alias Fury.ClientSupervisor
+
   @registry Fury.Session.Registry
   @storm_bridge Application.get_env(:fury, :storm_bridge)
 
@@ -27,13 +29,20 @@ defmodule Fury.SessionServer do
     {:ok, state}
   end
 
-  def handle_call(:get_url, _, %{url: url} = state) do
-    {:reply, url, state}
-  end
-
   def handle_call({:get_request, request_id}, _, %{id: id} = state) do
     request = @storm_bridge.get_request(id, request_id)
 
     {:reply, request, state}
+  end
+  def handle_call({:start_clients, ids}, _, state) do
+    %{transport_mod: transport_mod, protocol_mod: protocol_mod,
+      id: id, url: url} = state
+
+    Enum.each ids, fn client_id ->
+      {:ok, _} = ClientSupervisor.start_child(client_id, url, transport_mod,
+                                              protocol_mod, id)
+    end
+
+    {:reply, :ok, state}
   end
 end

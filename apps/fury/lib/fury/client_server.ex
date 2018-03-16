@@ -5,7 +5,7 @@ defmodule Fury.ClientServer do
   alias Fury.Session
 
   defmodule State do
-    defstruct [:transport_mod, :protocol_mod, :session_id, :session,
+    defstruct [:id, :url, :transport_mod, :protocol_mod, :session_id, :session,
                request_id: 0, transport: :not_connected]
   end
 
@@ -13,8 +13,10 @@ defmodule Fury.ClientServer do
     GenServer.start_link(__MODULE__, opts)
   end
 
-  def init([transport_mod, protocol_mod, session_id]) do
+  def init([id, url, transport_mod, protocol_mod, session_id]) do
     state = %State{
+      id: id,
+      url: url,
       transport_mod: transport_mod,
       protocol_mod: protocol_mod,
       session_id: session_id,
@@ -26,8 +28,8 @@ defmodule Fury.ClientServer do
   end
 
   def handle_info(:connect, state) do
-    %{transport_mod: transport_mod, session_id: session_id} = state
-    url = Session.get_url(session_id)
+    %{transport_mod: transport_mod, session_id: session_id,
+      url: url} = state
 
     case Client.connect(transport_mod, url) do
       {:ok, transport} ->

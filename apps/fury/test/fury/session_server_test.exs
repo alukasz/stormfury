@@ -3,6 +3,7 @@ defmodule Fury.SessionServerTest do
 
   import Mox
 
+  alias Fury.ClientSupervisor
   alias Fury.SessionServer
   alias Fury.Mock.{Protocol, Storm, Transport}
 
@@ -10,6 +11,8 @@ defmodule Fury.SessionServerTest do
     state = %SessionServer.State{
       id: make_ref(),
       url: "localhost",
+      transport_mod: Transport,
+      protocol_mod: Protocol
     }
 
     {:ok, state: state}
@@ -32,10 +35,26 @@ defmodule Fury.SessionServerTest do
     end
   end
 
-  describe "handle_call(:get_url, _, _)" do
-    test "returns url", %{state: state} do
-      assert SessionServer.handle_call(:get_url, :from, state) ==
-        {:reply, "localhost", state}
+  describe "handle_call({:start_clients, ids}, _, _)" do
+    setup :terminate_clients
+    setup :set_mox_global
+
+    test "replies :ok", %{state: state} do
+      stub Protocol, :init, fn -> %{} end
+      stub Transport, :connect, fn _, _ -> {:error, :timeout} end
+      ids = [1, 2, 3]
+
+      assert SessionServer.handle_call({:start_clients, ids}, :from, state) ==
+        {:reply, :ok, state}
+    end
+
+    test "starts clients", %{state: state} do
+      stub Protocol, :init, fn -> %{} end
+      stub Transport, :connect, fn _, _ -> {:error, :timeout} end
+
+      SessionServer.handle_call({:start_clients, [1, 2, 3]}, :from, state)
+
+      assert length(DynamicSupervisor.which_children(ClientSupervisor)) == 3
     end
   end
 
@@ -54,5 +73,13 @@ defmodule Fury.SessionServerTest do
 
       verify!()
     end
+  end
+
+  defp terminate_clients(_) do
+    ClientSupervisor
+    |> DynamicSupervisor.which_children()
+    |> Enum.each(fn {_, pid, _, _} ->
+        DynamicSupervisor.terminate_child(ClientSupervisor, pid)
+      end)
   end
 end

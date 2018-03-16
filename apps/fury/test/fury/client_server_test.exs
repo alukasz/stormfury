@@ -14,8 +14,10 @@ defmodule Fury.ClientServerTest do
     stub Transport, :connect, fn _, _ -> {:ok, self()} end
 
     session_id = make_ref()
-    start_opts = [Transport, Protocol, session_id]
+    start_opts = [:id, "localhost", Transport, Protocol, session_id]
     state = %State{
+      id: :id,
+      url: "localhost",
       transport_mod: Transport,
       protocol_mod: Protocol,
       session_id: session_id,

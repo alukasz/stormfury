@@ -7,8 +7,9 @@ defmodule Fury.ClientSupervisor do
     DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  def start_child(transport_mod, protocol_mod, session_id) do
-    child_spec = {ClientServer, [transport_mod, protocol_mod, session_id]}
+  def start_child(id, url, transport_mod, protocol_mod, session_id) do
+    child_spec = {ClientServer, [id, url, transport_mod,
+                                 protocol_mod, session_id]}
 
     DynamicSupervisor.start_child(__MODULE__, child_spec)
   end
