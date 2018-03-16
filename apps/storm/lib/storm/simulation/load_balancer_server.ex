@@ -19,6 +19,8 @@ defmodule Storm.Simulation.LoadBalancerServer do
   end
 
   def init(nodes) do
+    schedule_start_clients()
+
     {:ok, %State{nodes: nodes}}
   end
 
@@ -29,6 +31,8 @@ defmodule Storm.Simulation.LoadBalancerServer do
   end
 
   def handle_info(:do_start_clients, state) do
+    schedule_start_clients()
+
     %{nodes: nodes, to_start: to_start} = state
     {now, next_time} = split_by_start_time(to_start)
     clients_per_node = calculate_clients_per_node(nodes, now)
@@ -39,7 +43,6 @@ defmodule Storm.Simulation.LoadBalancerServer do
 
     {:noreply, %{state | to_start: next_time}}
   end
-
 
   defp split_by_start_time(to_start) do
     now = Enum.map to_start, fn {session, [h | _]} -> {session, h} end
@@ -101,5 +104,9 @@ defmodule Storm.Simulation.LoadBalancerServer do
         @fury_bridge.start_clients(node, session, clients)
       end
     end
+  end
+
+  defp schedule_start_clients do
+    Process.send_after(self(), :start_clients, :timer.seconds(1))
   end
 end
