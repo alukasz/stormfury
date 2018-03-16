@@ -3,6 +3,7 @@ defmodule Fury.ClientServer do
 
   alias Fury.Client
   alias Fury.Session
+  alias Storm.DSL.Util
 
   defmodule State do
     defstruct [:id, :url, :transport_mod, :protocol_mod, :session_id, :session,
@@ -28,8 +29,7 @@ defmodule Fury.ClientServer do
   end
 
   def handle_info(:connect, state) do
-    %{transport_mod: transport_mod, session_id: session_id,
-      url: url} = state
+    %{transport_mod: transport_mod, url: url} = state
 
     case Client.connect(transport_mod, url) do
       {:ok, transport} ->
@@ -56,7 +56,7 @@ defmodule Fury.ClientServer do
   def handle_info(:make_request, state) do
     %{transport_mod: transport_mod, transport: transport,
       protocol_mod: protocol_mod, session_id: session_id,
-      request_id: request_id} = state
+      request_id: request_id, id: id} = state
 
     case Session.get_request(session_id, request_id) do
       {:ok, {:think, time}} ->
@@ -64,6 +64,7 @@ defmodule Fury.ClientServer do
         {:noreply, %{state | request_id: request_id + 1}}
 
       {:ok, request} ->
+        request = put_client_id(request, id)
         Client.make_request(transport_mod, transport, protocol_mod, request)
         make_request()
         {:noreply, %{state | request_id: request_id + 1}}
@@ -73,6 +74,10 @@ defmodule Fury.ClientServer do
     end
   end
 
+  defp put_client_id({_, payload} = request, id) do
+    payload = Util.replace_vars(payload, %{"id" => id})
+    put_elem(request, 1, payload)
+  end
 
   defp connect do
     send(self(), :connect)
