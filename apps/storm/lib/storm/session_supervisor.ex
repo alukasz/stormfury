@@ -13,7 +13,7 @@ defmodule Storm.SessionSupervisor do
   def start_child(%{simulation_id: simulation_id} = session) do
     child_spec = {SessionServer, session}
 
-    DynamicSupervisor.start_child(name(simulation_id), child_spec)
+    {:ok, _} = DynamicSupervisor.start_child(name(simulation_id), child_spec)
   end
 
   def init(_) do

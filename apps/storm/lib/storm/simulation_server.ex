@@ -37,10 +37,10 @@ defmodule Storm.SimulationServer do
     Enum.each(nodes, fn node ->
       Enum.each(sessions, fn %{id: session_id} ->
         opts = [session_id, url, transport_mod, protocol_mod]
-        @fury_bridge.start_session(node, opts)
+        {:ok, _} = @fury_bridge.start_session(node, opts)
       end)
     end)
-    Enum.each(simulation.sessions, &Session.new(&1))
+    Enum.each(sessions, &Session.new(&1))
 
     {:noreply, state}
   end
