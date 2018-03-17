@@ -11,7 +11,7 @@ defmodule Fury.SessionTest do
   describe "new/4" do
     test "starts new SessionServer" do
       assert {:ok, pid} =
-        Session.new(make_ref(), "localhost", Transport, Protocol)
+        Session.new(:session_test_new, "localhost", Transport, Protocol)
       assert is_pid(pid)
     end
   end
@@ -47,10 +47,17 @@ defmodule Fury.SessionTest do
 
       verify!()
     end
+
+    test "uses cache on subsequent calls", %{session: id} do
+      expect Storm, :get_request, fn _, _ -> {:ok, :data} end
+      Session.get_request(id, 1)
+
+      assert Session.get_request(id, 1) == {:ok, :data}
+    end
   end
 
-  defp start_server(_) do
-    id = make_ref()
+  defp start_server(%{line: line}) do
+    id = :"session_test_#{line}"
     opts = [id, "localhost", Transport, Protocol]
     {:ok, pid} = start_supervised({SessionServer, opts})
     allow(Storm, self(), pid)

@@ -59,6 +59,9 @@ defmodule Fury.ClientServer do
       request_id: request_id, id: id} = state
 
     case Session.get_request(session_id, request_id) do
+      {:ok, :not_found} ->
+        {:noreply, state}
+
       {:ok, {:think, time}} ->
         make_request_after(:timer.seconds(time))
         {:noreply, %{state | request_id: request_id + 1}}
@@ -68,9 +71,6 @@ defmodule Fury.ClientServer do
         Client.make_request(transport_mod, transport, protocol_mod, request)
         make_request()
         {:noreply, %{state | request_id: request_id + 1}}
-
-      {:error, :not_found} ->
-        {:noreply, state}
     end
   end
 

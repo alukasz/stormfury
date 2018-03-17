@@ -9,11 +9,11 @@ defmodule Fury.ClientServerTest do
   alias Fury.Mock.{Protocol, Storm, Transport}
 
   setup :set_mox_global
-  setup do
+  setup %{line: line} do
     stub Protocol, :init, fn -> %{} end
     stub Transport, :connect, fn _, _ -> {:ok, self()} end
 
-    session_id = make_ref()
+    session_id = :"client_server_test_#{line}"
     start_opts = [:id, "localhost", Transport, Protocol, session_id]
     state = %State{
       id: :id,

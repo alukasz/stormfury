@@ -5,11 +5,12 @@ defmodule Fury.SessionServerTest do
 
   alias Fury.ClientSupervisor
   alias Fury.SessionServer
+  alias Fury.Session.Cache
   alias Fury.Mock.{Protocol, Storm, Transport}
 
-  setup do
+  setup %{line: line} do
     state = %SessionServer.State{
-      id: make_ref(),
+      id: :"session_server_test_#{line}",
       url: "localhost",
       transport_mod: Transport,
       protocol_mod: Protocol
@@ -20,7 +21,7 @@ defmodule Fury.SessionServerTest do
 
   describe "start_link/1" do
     test "starts new SessionServer" do
-      id = make_ref()
+      id = :session_server_test
       opts = [id, "localhost", Transport, Protocol]
 
       assert {:ok, pid} = SessionServer.start_link(opts)
@@ -59,6 +60,11 @@ defmodule Fury.SessionServerTest do
   end
 
   describe "handle_call({:get_request, id}, _, _)" do
+    setup %{state: %{id: id}} do
+      Cache.new(id)
+
+      :ok
+    end
     test "replies with request", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:think, 10}} end
 
@@ -72,6 +78,15 @@ defmodule Fury.SessionServerTest do
       SessionServer.handle_call({:get_request, 0}, :from, state)
 
       verify!()
+    end
+
+
+    test "stores requests in cache", %{state: state} do
+      stub Storm, :get_request, fn _, _ -> {:ok, {:think, 10}} end
+
+      SessionServer.handle_call({:get_request, 0}, :from, state)
+
+      assert Cache.get(state.id, 0) == {:ok, {:think, 10}}
     end
   end
 
