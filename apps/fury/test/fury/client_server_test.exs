@@ -117,9 +117,11 @@ defmodule Fury.ClientServerTest do
     end
   end
 
-  describe "handle_info(:transport_disconnected, state)" do
+  describe "handle_info({:transport_disconnected, reason}, state)" do
     test "sets transport to :not_connected", %{state: state} do
-      assert ClientServer.handle_info(:transport_disconnected, state) ==
+      message = {:transport_disconnected, :reason}
+
+      assert ClientServer.handle_info(message, state) ==
         {:noreply, %{state | transport: :not_connected}}
     end
   end

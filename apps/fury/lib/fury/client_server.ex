@@ -47,7 +47,7 @@ defmodule Fury.ClientServer do
 
     {:noreply, %{state | session: session}}
   end
-  def handle_info(:transport_disconnected, state) do
+  def handle_info({:transport_disconnected, _reason}, state) do
     {:noreply, %{state | transport: :not_connected}}
   end
   def handle_info(:make_request, %{transport: :not_connected} = state) do
