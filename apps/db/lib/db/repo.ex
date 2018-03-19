@@ -2,42 +2,52 @@ defmodule Db.Repo do
   alias Db.Record
 
   def get(table, id) do
-    transaction = fn -> :mnesia.read(table, id) end
+    operation = fn -> :mnesia.read(table, id) end
 
-    case :mnesia.transaction(transaction) do
-      {:atomic, []} ->
+    case transaction(operation) do
+      [] ->
         nil
 
-      {:atomic, [record]} ->
+      [record] ->
         Record.to_struct(record)
 
-      {:aborted, reason} ->
-        {:error, reason}
+      error ->
+        error
     end
   end
 
   def insert(%_{} = struct) do
-    transaction = fn ->
+    operation = fn ->
       struct
       |> Record.from_struct()
       |> :mnesia.write()
     end
 
-    case :mnesia.transaction(transaction) do
-      {:atomic, :ok} ->
+    case transaction(operation) do
+      :ok ->
         :ok
 
-      {:aborted, reason} ->
-        {:error, reason}
+      error ->
+        error
     end
   end
 
   def match(match_spec) do
-    transaction = fn -> :mnesia.match_object(match_spec) end
+    operation = fn -> :mnesia.match_object(match_spec) end
 
-    case :mnesia.transaction(transaction) do
-      {:atomic, records} ->
+    case transaction(operation) do
+      records when is_list(records) ->
         Enum.map(records, &Record.to_struct/1)
+
+      error ->
+        error
+    end
+  end
+
+  def transaction(operations) do
+    case :mnesia.transaction(operations) do
+      {:atomic, result} ->
+        result
 
       {:aborted, reason} ->
         {:error, reason}

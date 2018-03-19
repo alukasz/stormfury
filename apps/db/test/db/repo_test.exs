@@ -45,16 +45,23 @@ defmodule Db.RepoTest do
 
       records = Repo.match({TestStruct, :_, :_, :_, "will match"})
 
-      assert length(records) == 2
-      assert Enum.at(records, 0).id in [2, 3]
-      assert Enum.at(records, 1).id in [2, 3]
-      refute Enum.at(records, 0).id == Enum.at(records, 1).id
+      assert records |> Enum.map(&(&1.id)) |> Enum.sort() == [2, 3]
     end
 
     test "returns empty list when no matches" do
       insert_record(TestStruct.record(id: 1, foo: "no match"))
 
       assert [] = Repo.match({TestStruct, :_, :_, :_, "will match"})
+    end
+  end
+
+  describe "transaction/1" do
+    test "performs operation inside transaction" do
+      transaction = fn -> :mnesia.write(TestStruct.record(id: 42)) end
+
+      assert :ok = Repo.transaction(transaction)
+
+      assert record_exists?(TestStruct, 42)
     end
   end
 end
