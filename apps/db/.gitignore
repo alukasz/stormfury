@@ -22,3 +22,8 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 db-*.tar
 
+# Ignore mnesia files but keep directories
+/priv/mnesia/prod/*
+/priv/mnesia/dev/*
+!/priv/mnesia/prod/.gitkeep
+!/priv/mnesia/dev/.gitkeep
