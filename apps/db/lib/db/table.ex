@@ -3,7 +3,7 @@ defmodule Db.Table do
 
   def create_from_struct(%mod{} = struct, opts \\ []) do
     opts = [{:attributes, table_attributes(struct)} | opts]
-    IO.inspect opts
+
     :mnesia.create_table(mod, opts)
   end
 
