@@ -72,7 +72,7 @@ defmodule Fury.ClientServerTest do
     end
 
     test "starts making requests when transport connects", %{state: state} do
-      stub Transport, :connect, fn _, _->
+      stub Transport, :connect, fn _, _ ->
         {:ok, self()}
       end
 
@@ -94,7 +94,7 @@ defmodule Fury.ClientServerTest do
     end
 
     test "does not make requests on transport error", %{state: state} do
-      stub Transport, :connect, fn _, _->
+      stub Transport, :connect, fn _, _ ->
         {:error, :timeout}
       end
 
@@ -152,7 +152,6 @@ defmodule Fury.ClientServerTest do
 
       verify!()
     end
-
 
     test "performs received request", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:push, "data"}} end

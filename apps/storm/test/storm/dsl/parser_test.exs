@@ -99,7 +99,7 @@ defmodule Storm.DSL.ParserTest do
 
     test "works with list" do
       tokens = [{:for, 1}, {:identifier, 1, "i"}, {:in, 1},
-                {:"[", 1}, {:int, 1, 1}, {:","}, {:int, 1, 2}, {:"]", 1,},
+                {:"[", 1}, {:int, 1, 1}, {:","}, {:int, 1, 2}, {:"]", 1},
                 {:do, 1}, {:end, 1}]
 
       assert Parser.parse(tokens) ==
@@ -130,7 +130,6 @@ defmodule Storm.DSL.ParserTest do
 
     assert Parser.parse(tokens) == syntax_error("'<'")
   end
-
 
   defp syntax_error(token, line \\ 1) do
     {:error, {"syntax error before: #{token}", line}}

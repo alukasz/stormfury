@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Db.Schema.Drop do
       :ok ->
         Mix.shell.info("Dropped mnesia")
 
-      {:error, reason}->
+      {:error, reason} ->
         Mix.shell.error("Unable to drop mnesia schema: #{inspect reason}")
     end
   end

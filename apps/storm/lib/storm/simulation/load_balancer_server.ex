@@ -68,7 +68,7 @@ defmodule Storm.Simulation.LoadBalancerServer do
   end
 
   defp do_start_clients(nodes) do
-    Enum.each nodes, fn {node, sessions}->
+    Enum.each nodes, fn {node, sessions} ->
       Enum.each sessions, fn {session, clients} ->
         @fury_bridge.start_clients(node, session, clients)
       end

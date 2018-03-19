@@ -51,7 +51,6 @@ defmodule Storm.SessionServer do
     {:noreply, %{state | clients_started: started + to_start}}
   end
 
-
   defp do_start_clients(_, _, 0), do: :ok
   defp do_start_clients(simulation_id, session_id, to_start) do
     ids = Simulation.get_ids(simulation_id, to_start)

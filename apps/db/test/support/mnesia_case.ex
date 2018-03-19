@@ -22,7 +22,7 @@ defmodule Db.MnesiaCase do
     record
   end
 
-  def record_exists(table, id) do
+  def record_exists?(table, id) do
     transaction = fn -> :mnesia.read(table, id) end
 
     match?({:atomic, [_]}, :mnesia.transaction(transaction))

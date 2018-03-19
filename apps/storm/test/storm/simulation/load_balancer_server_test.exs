@@ -141,7 +141,7 @@ defmodule Storm.Simulation.LoadBalancerServerTest do
     defp track_started_clients(agent) do
       stub Fury, :start_clients, fn node, session, clients ->
         updater = &Enum.concat(&1, clients)
-        Agent.update agent, fn {nodes, sessions}->
+        Agent.update agent, fn {nodes, sessions} ->
           nodes = Map.update(nodes, node, clients, updater)
           sessions = Map.update(sessions, session, clients, updater)
 

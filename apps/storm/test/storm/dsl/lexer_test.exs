@@ -73,7 +73,8 @@ defmodule Storm.DSL.LexerTest do
   describe "reserved words" do
     Enum.each @reserved_words, fn word ->
       test "#{word} is special identifier" do
-        assert Lexer.tokenize(Atom.to_string(unquote(word))) == {:ok, [{unquote(word), 1}]}
+        assert Lexer.tokenize(Atom.to_string(unquote(word))) ==
+          {:ok, [{unquote(word), 1}]}
       end
     end
   end
@@ -81,7 +82,8 @@ defmodule Storm.DSL.LexerTest do
   describe "symbols" do
     Enum.each @symbols, fn symbol ->
       test "#{symbol} is special character" do
-        assert Lexer.tokenize(Atom.to_string(unquote(symbol))) == {:ok, [{unquote(symbol), 1}]}
+        assert Lexer.tokenize(Atom.to_string(unquote(symbol))) ==
+          {:ok, [{unquote(symbol), 1}]}
       end
     end
   end

@@ -28,7 +28,7 @@ defmodule Db.RepoTest do
     test "inserts struct into database" do
       assert :ok = Repo.insert(%TestStruct{id: 43})
 
-      assert record_exists(TestStruct, 43)
+      assert record_exists?(TestStruct, 43)
     end
 
     test "returns error tuple when table does not exist" do

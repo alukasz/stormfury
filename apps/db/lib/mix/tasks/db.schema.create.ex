@@ -10,10 +10,10 @@ defmodule Mix.Tasks.Db.Schema.Create do
          {:atomic, :ok} <- create_table(Storm.Session) do
       Mix.shell.info("Created mnesia schema and tables")
     else
-      {:error, reason}->
+      {:error, reason} ->
         Mix.shell.error("Unable to create mnesia schema: #{inspect reason}")
 
-      {:aborted, reason}->
+      {:aborted, reason} ->
         Mix.shell.error("Unable to create mnesia table: #{inspect reason}")
     end
   end

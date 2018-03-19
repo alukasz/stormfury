@@ -68,7 +68,7 @@ defmodule Storm.SessionServerTest do
     test "starts arrival_rate clients",
         %{state: state, lb: lb, session: %{id: id}} do
       allow(Fury, self(), lb)
-      expect Fury, :start_clients, fn :nonode, ^id, [_, _]-> :ok end
+      expect Fury, :start_clients, fn :nonode, ^id, [_, _] -> :ok end
 
       SessionServer.handle_info(:start_clients, state)
 

@@ -80,7 +80,6 @@ defmodule Fury.SessionServerTest do
       verify!()
     end
 
-
     test "stores requests in cache", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:think, 10}} end
 
