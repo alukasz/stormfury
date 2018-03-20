@@ -1,8 +1,8 @@
 defmodule Db.Simulations do
   alias Db.Repo
   alias Db.Util
-  alias Storm.Session
-  alias Storm.Simulation
+  alias Db.Session
+  alias Db.Simulation
 
   def get(id) do
     transaction = fn ->

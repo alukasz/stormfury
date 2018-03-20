@@ -3,8 +3,8 @@ defmodule Db.SimulationsTest do
 
   alias Db.Simulations
   alias Db.Repo
-  alias Storm.Simulation
-  alias Storm.Session
+  alias Db.Simulation
+  alias Db.Session
 
   describe "get/1" do
     test "returns simulation by id" do
@@ -20,6 +20,7 @@ defmodule Db.SimulationsTest do
       Repo.insert(%Session{id: 13, simulation_id: 42})
 
       assert %{sessions: sessions} = Simulations.get(42)
+
 
       assert sessions |> Enum.map(&(&1.id)) |> Enum.sort() == [11, 13]
     end

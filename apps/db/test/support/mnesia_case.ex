@@ -11,8 +11,8 @@ defmodule Db.MnesiaCase do
 
   setup do
     :mnesia.clear_table(Db.TestStruct)
-    :mnesia.clear_table(Storm.Simulation)
-    :mnesia.clear_table(Storm.Session)
+    :mnesia.clear_table(Db.Simulation)
+    :mnesia.clear_table(Db.Session)
 
     :ok
   end
