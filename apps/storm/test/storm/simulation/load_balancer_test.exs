@@ -1,12 +1,11 @@
 defmodule Storm.Simulation.LoadBalancerTest do
   use ExUnit.Case, async: true
 
-  alias Storm.Simulation
   alias Storm.Simulation.LoadBalancer
   alias Storm.Simulation.LoadBalancerServer
 
   setup do
-    simulation = %Simulation{id: make_ref()}
+    simulation = %Db.Simulation{id: make_ref()}
     {:ok, _} = start_supervised({LoadBalancerServer, simulation})
 
     {:ok, id: simulation.id}

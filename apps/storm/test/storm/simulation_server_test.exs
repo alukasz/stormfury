@@ -3,18 +3,16 @@ defmodule Storm.SimulationServerTest do
 
   import Mox
 
-  alias Storm.Session
   alias Storm.SessionSupervisor
-  alias Storm.Simulation
   alias Storm.SimulationServer
   alias Storm.SimulationServer.State
   alias Storm.Mock.Fury
 
   setup do
     id = make_ref()
-    simulation = %Simulation{
+    simulation = %Db.Simulation{
       id: id,
-      sessions: [%Session{id: make_ref(), simulation_id: id}],
+      sessions: [%Db.Session{id: make_ref(), simulation_id: id}],
       nodes: [:nonode]
     }
     state = %State{simulation: simulation}
@@ -56,9 +54,7 @@ defmodule Storm.SimulationServerTest do
   describe "handle_info(:start_sessions, state)" do
     setup %{state: state, simulation: simulation} do
       {:ok, _} = start_supervised({SessionSupervisor, simulation})
-      nodes = [:n1, :n2, :n3]
-      session = %Session{id: make_ref(), simulation_id: simulation.id}
-      simulation = %{simulation | nodes: nodes, sessions: [session]}
+      simulation = %{simulation | nodes: [:n1, :n2, :n3]}
       state = %{state | simulation: simulation}
 
       {:ok, state: state, simulation: simulation}

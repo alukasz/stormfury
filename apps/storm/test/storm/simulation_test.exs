@@ -5,31 +5,32 @@ defmodule Storm.SimulationTest do
   alias Storm.SimulationServer
 
   setup do
-    state = %Simulation{
+    simulation = %Db.Simulation{
       id: make_ref(),
       nodes: [:nonode]
     }
 
-    {:ok, state: state, id: state.id}
+    {:ok, simulation: simulation}
   end
 
   describe "new/1" do
-    test "starts new Simulation", %{state: %{id: id} = state} do
-      assert {:ok, _} = Simulation.new(state)
-      assert [{_, _}] = Registry.lookup(Storm.Simulation.Registry, id)
+    test "starts new Simulation", %{simulation: simulation} do
+      assert {:ok, _} = Simulation.new(simulation)
+      assert [{_, _}] =
+        Registry.lookup(Storm.Simulation.Registry, simulation.id)
     end
   end
 
   describe "get_ids/1" do
     setup :start_server
 
-    test "returns range of clients ids", %{id: id} do
-      assert 1..10 = Simulation.get_ids(id, 10)
+    test "returns range of clients ids", %{simulation: %{id: simulation_id}} do
+      assert 1..10 = Simulation.get_ids(simulation_id, 10)
     end
   end
 
-  defp start_server(%{state: state}) do
-    {:ok, _} = start_supervised({SimulationServer, state})
+  defp start_server(%{simulation: simulation}) do
+    {:ok, _} = start_supervised({SimulationServer, simulation})
 
     :ok
   end

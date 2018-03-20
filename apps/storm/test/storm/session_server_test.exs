@@ -3,14 +3,13 @@ defmodule Storm.SessionServerTest do
 
   import Mox
 
-  alias Storm.Session
   alias Storm.SessionServer
   alias Storm.SessionServer.State
   alias Storm.Simulation.LoadBalancerServer
   alias Storm.Mock.Fury
 
   setup do
-    session = %Session{
+    session = %Db.Session{
       id: make_ref(),
       clients: 10,
       arrival_rate: 2,
@@ -58,7 +57,7 @@ defmodule Storm.SessionServerTest do
 
   describe "handle_info(:start_clients, _)" do
     setup %{session: %{simulation_id: id}} do
-      simulation = %Storm.Simulation{id: id, nodes: [:nonode]}
+      simulation = %Db.Simulation{id: id, nodes: [:nonode]}
       {:ok, _} = start_supervised({Storm.SimulationServer, simulation})
       {:ok, lb} = start_supervised({LoadBalancerServer, simulation})
 

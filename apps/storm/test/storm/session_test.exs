@@ -3,41 +3,42 @@ defmodule Storm.SessionTest do
 
   alias Storm.Session
   alias Storm.SessionServer
-  alias Storm.Simulation
 
   setup do
-    state = %Session{
+    session = %Db.Session{
       id: make_ref(),
       simulation_id: make_ref(),
       scenario: [push: "data", think: 10]
     }
-    simulaion = %Simulation{id: state.simulation_id}
+    simulaion = %Db.Simulation{id: session.simulation_id}
     {:ok, _} = start_supervised({Storm.SessionSupervisor, simulaion})
 
-    {:ok, state: state}
+    {:ok, session: session}
   end
 
   describe "new/1" do
-    test "starts new SessionServer", %{state: state} do
-      assert {:ok, pid} = Session.new(state)
-      assert [{^pid, _}] = Registry.lookup(Storm.Session.Registry, state.id)
+    test "starts new SessionServer", %{session: %{id: id} = session} do
+      assert {:ok, pid} = Session.new(session)
+      assert [{^pid, _}] = Registry.lookup(Storm.Session.Registry, id)
     end
   end
 
   describe "get_request/2" do
-    setup %{state: %{id: id} = state} do
-      {:ok, _} = start_supervised({SessionServer, state})
+    setup %{session: session} do
+      {:ok, _} = start_supervised({SessionServer, session})
 
-      {:ok, session: id}
+      :ok
     end
 
-    test "returns request session id and index", %{session: session} do
-      assert Session.get_request(session, 0) == {:ok, {:push, "data"}}
-      assert Session.get_request(session, 1) == {:ok, {:think, 10}}
+    test "returns request session id and index",
+        %{session: %{id: session_id}} do
+      assert Session.get_request(session_id, 0) == {:ok, {:push, "data"}}
+      assert Session.get_request(session_id, 1) == {:ok, {:think, 10}}
     end
 
-    test "returns error tuple when request not found", %{session: session} do
-      assert Session.get_request(session, 10) == {:error, :not_found}
+    test "returns error tuple when request not found",
+        %{session: %{id: session_id}} do
+      assert Session.get_request(session_id, 10) == {:error, :not_found}
     end
   end
 end

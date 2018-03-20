@@ -10,7 +10,7 @@ defmodule Storm.SessionServer do
     defstruct session: nil, clients_started: 0
   end
 
-  def start_link(%{id: id} = session) do
+  def start_link(%Db.Session{id: id} = session) do
     GenServer.start_link(__MODULE__, session, name: name(id))
   end
 

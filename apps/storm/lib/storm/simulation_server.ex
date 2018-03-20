@@ -9,7 +9,7 @@ defmodule Storm.SimulationServer do
     defstruct simulation: nil, clients_started: 0
   end
 
-  def start_link(%{id: id} = simulation) do
+  def start_link(%Db.Simulation{id: id} = simulation) do
     GenServer.start_link(__MODULE__, simulation, name: name(id))
   end
 

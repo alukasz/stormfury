@@ -3,14 +3,13 @@ defmodule Storm.Simulation.LoadBalancerServerTest do
 
   import Mox
 
-  alias Storm.Simulation
   alias Storm.Simulation.LoadBalancerServer
   alias Storm.Simulation.LoadBalancerServer.State
   alias Storm.Mock.Fury
 
   setup do
     state = %State{nodes: [:nonode]}
-    simulation = %Simulation{id: make_ref()}
+    simulation = %Db.Simulation{id: make_ref()}
 
     {:ok, state: state, simulation: simulation}
   end

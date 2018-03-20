@@ -5,6 +5,7 @@ defmodule Db.Simulation do
     :duration,
     :protocol_mod,
     :transport_mod,
-    sessions: []
+    sessions: [],
+    nodes: []
   ]
 end

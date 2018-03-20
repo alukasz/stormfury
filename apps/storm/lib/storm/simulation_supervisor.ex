@@ -1,9 +1,7 @@
 defmodule Storm.SimulationSuperisor do
   use Supervisor
 
-  alias Storm.Simulation
-
-  def start_link(%Simulation{} = simulation) do
+  def start_link(%Db.Simulation{} = simulation) do
     Supervisor.start_link(__MODULE__, simulation)
   end
 

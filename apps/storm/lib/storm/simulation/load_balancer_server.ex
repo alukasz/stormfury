@@ -10,7 +10,7 @@ defmodule Storm.Simulation.LoadBalancerServer do
     defstruct nodes: [], to_start: []
   end
 
-  def start_link(%Simulation{id: id, nodes: nodes}) do
+  def start_link(%Db.Simulation{id: id, nodes: nodes}) do
     GenServer.start_link(__MODULE__, nodes, name: name(id))
   end
 
