@@ -64,4 +64,20 @@ defmodule Db.RepoTest do
       assert record_exists?(TestStruct, 42)
     end
   end
+
+  describe "abort_transaction/1" do
+    test "rollbacks current transaction" do
+      transaction = fn ->
+        insert_record(TestStruct.record(id: 42))
+
+        assert record_exists?(TestStruct, 42)
+
+        Repo.abort_transaction("fail on purpose")
+      end
+
+      assert Repo.transaction(transaction) == {:error, "fail on purpose"}
+
+      refute record_exists?(TestStruct, 42)
+    end
+  end
 end

@@ -53,4 +53,8 @@ defmodule Db.Repo do
         {:error, reason}
     end
   end
+
+  def abort_transaction(message) do
+    :mnesia.abort(message)
+  end
 end

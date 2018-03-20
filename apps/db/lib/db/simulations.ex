@@ -51,6 +51,6 @@ defmodule Db.Simulations do
     Repo.insert(session)
   end
   defp insert_session(arg) do
-    :mnesia.abort("not a session #{inspect arg}")
+    Repo.abort_transaction("not a session #{inspect arg}")
   end
 end
