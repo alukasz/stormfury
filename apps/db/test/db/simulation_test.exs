@@ -1,7 +1,6 @@
 defmodule Db.SimulationsTest do
   use Db.MnesiaCase
 
-  alias Db.Simulations
   alias Db.Repo
   alias Db.Simulation
   alias Db.Session
@@ -10,7 +9,7 @@ defmodule Db.SimulationsTest do
     test "returns simulation by id" do
       Repo.insert(%Simulation{id: 42})
 
-      assert %Simulation{id: 42, sessions: []} = Simulations.get(42)
+      assert %Simulation{id: 42, sessions: []} = Simulation.get(42)
     end
 
     test "returns sessions of simulation" do
@@ -19,20 +18,20 @@ defmodule Db.SimulationsTest do
       Repo.insert(%Session{id: 12, simulation_id: 1})
       Repo.insert(%Session{id: 13, simulation_id: 42})
 
-      assert %{sessions: sessions} = Simulations.get(42)
+      assert %{sessions: sessions} = Simulation.get(42)
 
 
       assert sessions |> Enum.map(&(&1.id)) |> Enum.sort() == [11, 13]
     end
 
     test "returns null when simulation does not exist" do
-      assert Simulations.get(42) == nil
+      assert Simulation.get(42) == nil
     end
   end
 
   describe "insert/1" do
     test "inserts simulation" do
-      assert :ok = Simulations.insert(%Simulation{id: 42})
+      assert :ok = Simulation.insert(%Simulation{id: 42})
 
       assert %Simulation{id: 42} = Repo.get(Simulation, 42)
     end
@@ -41,7 +40,7 @@ defmodule Db.SimulationsTest do
       sessions = [%Session{id: 11}, %Session{id: 12}]
       simulation = %Simulation{id: 42, sessions: sessions}
 
-      assert :ok = Simulations.insert(simulation)
+      assert :ok = Simulation.insert(simulation)
 
       assert %Session{id: 11} = Repo.get(Session, 11)
       assert %Session{id: 12} = Repo.get(Session, 12)
@@ -50,7 +49,7 @@ defmodule Db.SimulationsTest do
     test "does not store sessions in simulations table" do
       simulation = %Simulation{id: 42, sessions: [%Session{id: 11}]}
 
-      Simulations.insert(simulation)
+      Simulation.insert(simulation)
 
       assert %{sessions: []} = Repo.get(Simulation, 42)
     end
@@ -58,10 +57,10 @@ defmodule Db.SimulationsTest do
     test "rollbacks transaction on error" do
       simulation = %Simulation{id: 42, sessions: [id: 11]}
 
-      {:error, "not a session" <> _} = Simulations.insert(simulation)
+      {:error, _} = Simulation.insert(simulation)
 
       refute Repo.get(Simulation, 42)
-      refute Repo.get(Session, 12)
+      refute Repo.get(Session, 11)
     end
   end
 end
