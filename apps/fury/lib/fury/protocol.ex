@@ -1,15 +1,15 @@
 defmodule Fury.Protocol do
-  @type session :: term
+  @type state :: term
   @type request :: {atom, String.t}
   @type data :: binary
 
-  @callback init :: session
+  @callback init :: state
 
-  @callback format(request, session) ::
-              {:ok, data}
+  @callback format(request, state) ::
+              {:ok, data, state}
               | {:error, term}
 
-  @callback handle_data(data, session) ::
-              {:ok, session}
+  @callback handle_data(data, state) ::
+              {:ok, state}
               | {:error, term}
 end

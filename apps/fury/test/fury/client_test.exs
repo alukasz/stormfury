@@ -32,23 +32,31 @@ defmodule Fury.ClientTest do
     end
   end
 
-  describe "make_request/4" do
+  describe "make_request/5" do
     test "invokes Protocol.format/2" do
-      expect Protocol, :format, fn _, _ -> {:ok, "data"} end
+      expect Protocol, :format, fn _, _ -> {:ok, "data", %{}} end
       stub Transport, :push, fn _, _ -> :ok end
 
-      Client.make_request(Transport, self(), Protocol, "data")
+      Client.make_request(Transport, self(), Protocol, %{}, "data")
 
       verify!()
     end
 
     test "invokes Transport.push/2" do
-      stub Protocol, :format, fn _, _ -> {:ok, "data"} end
+      stub Protocol, :format, fn _, _ -> {:ok, "data", %{}} end
       expect Transport, :push, fn _, _ -> :ok end
 
-      Client.make_request(Transport, self(), Protocol, "data")
+      Client.make_request(Transport, self(), Protocol, %{}, "data")
 
       verify!()
     end
+  end
+
+  test "returns updated protocol state" do
+    stub Protocol, :format, fn _, _ -> {:ok, "data", :updated_state} end
+    stub Transport, :push, fn _, _ -> :ok end
+
+    assert Client.make_request(Transport, self(), Protocol, %{}, "data") ==
+      :updated_state
   end
 end

@@ -73,18 +73,20 @@ defmodule Fury.ClientServer do
         {:noreply, %{state | request_id: request_id + 1}}
 
       {:ok, request} ->
-        do_make_request(request, state)
+        protocol_state = do_make_request(request, state)
         schedule_request()
-        {:noreply, %{state | request_id: request_id + 1}}
+        {:noreply, %{state | protocol_state: protocol_state,
+                             request_id: request_id + 1}}
     end
   end
 
   defp do_make_request(request, state) do
     %{id: id, transport_mod: transport_mod, transport: transport,
-      protocol_mod: protocol_mod} = state
+      protocol_mod: protocol_mod, protocol_state: protocol_state} = state
 
     request = put_client_id(request, id)
-    Client.make_request(transport_mod, transport, protocol_mod, request)
+    Client.make_request(transport_mod, transport, protocol_mod,
+                        protocol_state, request)
   end
 
   defp put_client_id({_, payload} = request, id) do

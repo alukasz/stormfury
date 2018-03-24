@@ -1,5 +1,5 @@
 defmodule Fury.SessionTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Mox
 

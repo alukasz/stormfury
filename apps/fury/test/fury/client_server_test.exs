@@ -1,5 +1,5 @@
 defmodule Fury.ClientServerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Mox
 
@@ -130,9 +130,19 @@ defmodule Fury.ClientServerTest do
 
     test "when request is found increases state.request_id", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:think, 1}} end
+      expected_request_id = state.request_id + 1
 
-      assert ClientServer.handle_info(:make_request, state) ==
-        {:noreply, %{state | request_id: state.request_id + 1}}
+      assert {:noreply, %{request_id: ^expected_request_id}} =
+        ClientServer.handle_info(:make_request, state)
+    end
+
+    test "when request is found updates protocol_state", %{state: state} do
+      stub Storm, :get_request, fn _, _ -> {:ok, {:push, "data"}} end
+      stub Protocol, :format, fn _, _ -> {:ok, "data", :updated_state} end
+      stub Transport, :push, fn _, _ -> :ok end
+
+      assert {:noreply, %{protocol_state: :updated_state}} =
+        ClientServer.handle_info(:make_request, state)
     end
 
     test "when request not found unmodified state", %{state: state} do
@@ -152,7 +162,7 @@ defmodule Fury.ClientServerTest do
 
     test "performs received request", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:push, "data"}} end
-      expect Protocol, :format, fn {:push, "data"}, _ -> {:ok, "data"} end
+      expect Protocol, :format, fn {:push, "data"}, _ -> {:ok, "data", %{}} end
       expect Transport, :push, fn _, "data" -> :ok end
 
       ClientServer.handle_info(:make_request, state)
@@ -162,7 +172,7 @@ defmodule Fury.ClientServerTest do
 
     test "makes next request", %{state: state} do
       stub Storm, :get_request, fn _, _ -> {:ok, {:push, "data"}} end
-      stub Protocol, :format, fn _, _ -> {:ok, "data"} end
+      stub Protocol, :format, fn _, _ -> {:ok, "data", %{}} end
       stub Transport, :push, fn _, _ -> :ok end
 
       ClientServer.handle_info(:make_request, state)

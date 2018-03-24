@@ -7,8 +7,8 @@ defmodule Fury.Protocol.Noop do
   end
 
   @impl true
-  def format({:push, data}, _) do
-    {:ok, data}
+  def format({:push, data}, state) do
+    {:ok, data, state}
   end
 
   @impl true
