@@ -3,8 +3,8 @@ defmodule Fury.Session do
   alias Fury.SessionSupervisor
   alias Fury.Session.Cache
 
-  def new(id, url, transport_mod, protocol_mod) do
-    SessionSupervisor.start_child(id, url, transport_mod, protocol_mod)
+  def new(%Db.Session{} = session, %Db.Simulation{} = simulation) do
+    SessionSupervisor.start_child(session, simulation)
   end
 
   def start_clients(id, ids) do

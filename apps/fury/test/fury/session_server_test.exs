@@ -8,12 +8,14 @@ defmodule Fury.SessionServerTest do
   alias Fury.Session.Cache
   alias Fury.Mock.{Protocol, Storm, Transport}
 
-  setup %{line: line} do
+  setup context do
+    id = :"session_server_test_#{context.line}"
+    session = %Db.Session{id: id}
+    simulation = %Db.Simulation{transport_mod: Transport, protocol_mod: Protocol}
     state = %SessionServer.State{
-      id: :"session_server_test_#{line}",
-      url: "localhost",
-      transport_mod: Transport,
-      protocol_mod: Protocol
+      id: id,
+      session: session,
+      simulation: simulation
     }
 
     {:ok, state: state}
@@ -22,9 +24,10 @@ defmodule Fury.SessionServerTest do
   describe "start_link/1" do
     test "starts new SessionServer" do
       id = :session_server_test
-      opts = [id, "localhost", Transport, Protocol]
+      session = %Db.Session{id: id}
+      simulation = %Db.Simulation{transport_mod: Transport, protocol_mod: Protocol}
 
-      assert {:ok, pid} = SessionServer.start_link(opts)
+      assert {:ok, pid} = SessionServer.start_link([session, simulation])
       assert [{^pid, _}] = Registry.lookup(Fury.Session.Registry, id)
     end
   end
@@ -37,12 +40,15 @@ defmodule Fury.SessionServerTest do
   end
 
   describe "handle_call({:start_clients, ids}, _, _)" do
-    setup :terminate_clients
     setup :set_mox_global
-
-    test "replies :ok", %{state: state} do
+    setup :terminate_clients
+    setup do
       stub Protocol, :init, fn -> %{} end
       stub Transport, :connect, fn _, _ -> {:error, :timeout} end
+      :ok
+    end
+
+    test "replies :ok", %{state: state} do
       ids = [1, 2, 3]
 
       assert SessionServer.handle_call({:start_clients, ids}, :from, state) ==
@@ -50,9 +56,6 @@ defmodule Fury.SessionServerTest do
     end
 
     test "starts clients", %{state: state} do
-      stub Protocol, :init, fn -> %{} end
-      stub Transport, :connect, fn _, _ -> {:error, :timeout} end
-
       SessionServer.handle_call({:start_clients, [1, 2, 3]}, :from, state)
 
       assert length(DynamicSupervisor.which_children(ClientSupervisor)) == 3
@@ -90,10 +93,12 @@ defmodule Fury.SessionServerTest do
   end
 
   defp terminate_clients(_) do
-    ClientSupervisor
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
+    on_exit fn ->
+      ClientSupervisor
+      |> DynamicSupervisor.which_children()
+      |> Enum.each(fn {_, pid, _, _} ->
         DynamicSupervisor.terminate_child(ClientSupervisor, pid)
       end)
+    end
   end
 end

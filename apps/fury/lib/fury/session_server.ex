@@ -8,10 +8,10 @@ defmodule Fury.SessionServer do
   @storm_bridge Application.get_env(:fury, :storm_bridge)
 
   defmodule State do
-    defstruct [:id, :url, :transport_mod, :protocol_mod]
+    defstruct [:id, :session, :simulation]
   end
 
-  def start_link([id | _] = opts) do
+  def start_link([%Db.Session{id: id}, %Db.Simulation{}] = opts) do
     GenServer.start_link(__MODULE__, opts, name: name(id))
   end
 
@@ -19,12 +19,11 @@ defmodule Fury.SessionServer do
     {:via, Registry, {@registry, id}}
   end
 
-  def init([id, url, transport_mod, protocol_mod]) do
+  def init([%{id: id} = session, simulation]) do
     state = %State{
       id: id,
-      url: url,
-      transport_mod: transport_mod,
-      protocol_mod: protocol_mod
+      session: session,
+      simulation: simulation
     }
     Cache.new(id)
 
@@ -46,12 +45,12 @@ defmodule Fury.SessionServer do
     end
   end
   def handle_call({:start_clients, ids}, _, state) do
-    %{transport_mod: transport_mod, protocol_mod: protocol_mod,
-      id: id, url: url} = state
+    %{id: session_id, simulation: %{url: url, transport_mod: transport_mod,
+                                    protocol_mod: protocol_mod}} = state
 
     Enum.each ids, fn client_id ->
-      {:ok, _} = ClientSupervisor.start_child(client_id, url, transport_mod,
-                                              protocol_mod, id)
+      {:ok, _} = ClientSupervisor.start_child(client_id, session_id, url,
+        transport_mod, protocol_mod)
     end
 
     {:reply, :ok, state}

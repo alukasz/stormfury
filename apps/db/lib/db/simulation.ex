@@ -1,6 +1,5 @@
 defmodule Db.Simulation do
   alias Db.Repo
-  alias Db.Util
   alias Db.Session
   alias Db.Simulation
 

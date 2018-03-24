@@ -8,9 +8,7 @@ defmodule Db.Session do
     :clients,
     :arrival_rate,
     :scenario,
-    :simulation_id,
-    :transport_mod,
-    :protocol_mod
+    :simulation_id
   ]
 
   def insert(%Session{} = session) do

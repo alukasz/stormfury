@@ -8,29 +8,26 @@ defmodule Fury.ClientServerTest do
   alias Fury.SessionServer
   alias Fury.Mock.{Protocol, Storm, Transport}
 
-  setup :set_mox_global
-  setup %{line: line} do
-    stub Protocol, :init, fn -> %{} end
-    stub Transport, :connect, fn _, _ -> {:ok, self()} end
+  setup :start_session_server
+  setup :default_stubs
+  setup %{session_id: session_id} do
 
-    session_id = :"client_server_test_#{line}"
-    start_opts = [:id, "localhost", Transport, Protocol, session_id]
+    start_opts = [:id, session_id, "localhost", Transport, Protocol]
     state = %State{
       id: :id,
+      session_id: session_id,
       url: "localhost",
       transport_mod: Transport,
       protocol_mod: Protocol,
-      session_id: session_id,
-      session: %{},
-      request_id: 0
+      protocol_state: %{},
     }
-    session_opts = [session_id, "localhost", Transport, Protocol]
-    {:ok, _} = start_supervised({SessionServer, session_opts})
 
     {:ok, start_opts: start_opts, state: state}
   end
 
   describe "start_link/1" do
+    setup :set_mox_global
+
     test "starts new ClientServer", %{start_opts: opts} do
       assert {:ok, pid} = ClientServer.start_link(opts)
 
@@ -40,7 +37,7 @@ defmodule Fury.ClientServerTest do
 
   describe "init/1" do
     test "builds state", %{start_opts: opts, state: state} do
-      assert {:ok, ^state} = ClientServer.init(opts)
+      assert ClientServer.init(opts) == {:ok, state}
     end
 
     test "initializes session", %{start_opts: opts} do
@@ -107,11 +104,11 @@ defmodule Fury.ClientServerTest do
   describe "handle_info({:transport_data, data}, state)" do
     test "invokes protocol to handle data", %{state: state} do
       expect Protocol, :handle_data, fn "data", %{} ->
-        {:ok, :updated_session}
+        {:ok, :updated_state}
       end
 
       assert ClientServer.handle_info({:transport_data, "data"}, state) ==
-        {:noreply, %{state | session: :updated_session}}
+        {:noreply, %{state | protocol_state: :updated_state}}
 
       verify!()
     end
@@ -174,10 +171,9 @@ defmodule Fury.ClientServerTest do
     end
 
     test "does not make request on {:think, time}", %{state: state} do
-      pid = self()
       stub Storm, :get_request, fn _, _ -> {:ok, {:think, 1}} end
-      stub Protocol, :format, fn _, _ -> send(pid, :protocol_called) end
-      stub Transport, :push, fn _, _ -> send(pid, :tranport_called) end
+      stub Protocol, :format, fn _, _ -> send(self(), :protocol_called) end
+      stub Transport, :push, fn _, _ -> send(self(), :tranport_called) end
 
       ClientServer.handle_info(:make_request, state)
 
@@ -212,5 +208,24 @@ defmodule Fury.ClientServerTest do
 
       refute_receive _
     end
+  end
+
+  defp start_session_server(context) do
+    session_id = :"client_server_test_#{context.line}"
+    simulation = %Db.Simulation{}
+    session = %Db.Session{id: session_id}
+    {:ok, pid} = start_supervised({SessionServer, [session, simulation]})
+
+    {:ok, session_id: session_id, session_server_pid: pid}
+  end
+
+  defp default_stubs(%{session_server_pid: session_server_pid}) do
+    allow(Storm, self(), session_server_pid)
+
+    stub Protocol, :init, fn -> %{} end
+    stub Transport, :connect, fn _, _ -> {:ok, self()} end
+    stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
+
+    :ok
   end
 end
