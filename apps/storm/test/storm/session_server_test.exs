@@ -57,9 +57,9 @@ defmodule Storm.SessionServerTest do
 
   describe "handle_info(:start_clients, _)" do
     setup %{session: %{simulation_id: id}} do
-      simulation = %Db.Simulation{id: id, nodes: [:nonode]}
+      simulation = %Db.Simulation{id: id}
       {:ok, _} = start_supervised({Storm.SimulationServer, simulation})
-      {:ok, lb} = start_supervised({LoadBalancerServer, simulation})
+      {:ok, lb} = start_supervised({LoadBalancerServer, %{simulation | nodes: [:nonode]}})
 
       {:ok, lb: lb}
     end

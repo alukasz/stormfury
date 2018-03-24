@@ -7,7 +7,6 @@ defmodule Storm.SimulationTest do
   setup do
     simulation = %Db.Simulation{
       id: make_ref(),
-      nodes: [:nonode]
     }
 
     {:ok, simulation: simulation}
