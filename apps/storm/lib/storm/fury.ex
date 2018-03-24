@@ -2,8 +2,8 @@ defmodule Storm.Fury do
   @behaviour Storm.FuryBridge
 
   @impl true
-  def start_session(node, opts) do
-    :rpc.call(node, Fury.Session, :new, opts)
+  def start_sessions(node, simulation_id) do
+    :rpc.call(node, Fury, :start_sessions, [simulation_id])
   end
 
   @impl true

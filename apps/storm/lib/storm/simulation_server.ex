@@ -31,18 +31,13 @@ defmodule Storm.SimulationServer do
   end
 
   def handle_info(:start_sessions, %{simulation: simulation} = state) do
-    %{nodes: nodes, sessions: sessions, protocol_mod: protocol_mod,
-      transport_mod: transport_mod, url: url} = simulation
+    %{id: simulation_id, nodes: nodes, sessions: sessions} = simulation
 
-    Enum.each(nodes, fn node ->
-      Enum.each(sessions, fn %{id: session_id} ->
-        opts = [session_id, url, transport_mod, protocol_mod]
-        {:ok, _} = @fury_bridge.start_session(node, opts)
-      end)
-    end)
-    Enum.each(sessions, &Session.new(&1))
+    Enum.each nodes, fn node ->
+      @fury_bridge.start_sessions(node, simulation_id)
+    end
+    Enum.map(sessions, &Session.new(&1))
 
     {:noreply, state}
   end
-
 end

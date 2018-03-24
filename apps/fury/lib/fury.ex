@@ -6,6 +6,9 @@ defmodule Fury do
       nil ->
         {:error, "Simulation with id #{simulation_id} not found"}
 
+      {:error, _} = error ->
+        error
+
       simulation ->
         do_start_sessions(simulation)
         :ok

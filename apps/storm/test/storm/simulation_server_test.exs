@@ -61,7 +61,7 @@ defmodule Storm.SimulationServerTest do
     end
 
     test "starts local sessions", %{state: state, simulation: simulation} do
-      stub Fury, :start_session, fn _, _ -> {:ok, :pid} end
+      stub Fury, :start_sessions, fn _, _ -> {:ok, :pid} end
       %{sessions: [%{id: session_id}]} = simulation
 
       SimulationServer.handle_info(:start_sessions, state)
@@ -70,7 +70,7 @@ defmodule Storm.SimulationServerTest do
     end
 
     test "starts remote sessions", %{state: state} do
-      expect Fury, :start_session, 3, fn _, _ -> {:ok, :pid} end
+      expect Fury, :start_sessions, 3, fn _, _ -> {:ok, :pid} end
 
       SimulationServer.handle_info(:start_sessions, state)
 
