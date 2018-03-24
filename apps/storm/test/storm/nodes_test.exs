@@ -5,6 +5,7 @@ defmodule Storm.NodesTest do
 
   @host Application.fetch_env!(:storm, :host)
 
+  @tag timeout: 2000
   test "starts and stops slave node" do
     assert {:ok, node} = Nodes.start_node(@host)
     assert_slave_started(node)

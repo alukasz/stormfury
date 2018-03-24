@@ -1,8 +1,6 @@
 defmodule Storm.Simulation.LoadBalancerServer do
   use GenServer
 
-  alias Storm.Simulation
-
   @fury_bridge Application.get_env(:storm, :fury_bridge)
   @registry Storm.LoadBalancer.Registry
 
@@ -10,16 +8,17 @@ defmodule Storm.Simulation.LoadBalancerServer do
     defstruct nodes: [], to_start: []
   end
 
-  def start_link(%Db.Simulation{id: id, nodes: nodes}) do
-    GenServer.start_link(__MODULE__, nodes, name: name(id))
+  def start_link(%Db.Simulation{id: id, hosts: hosts}) do
+    GenServer.start_link(__MODULE__, hosts, name: name(id))
   end
 
   def name(id) do
     {:via, Registry, {@registry, id}}
   end
 
-  def init(nodes) do
+  def init(hosts) do
     schedule_start_clients()
+    nodes = Enum.map(hosts, &(:"fury@#{&1}"))
 
     {:ok, %State{nodes: nodes}}
   end

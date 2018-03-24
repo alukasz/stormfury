@@ -17,7 +17,7 @@ defmodule Storm.SessionServerTest do
       simulation_id: make_ref()
     }
     state = %State{
-      session: session
+      session: session,
     }
 
     {:ok, session: session, state: state}
@@ -57,9 +57,9 @@ defmodule Storm.SessionServerTest do
 
   describe "handle_info(:start_clients, _)" do
     setup %{session: %{simulation_id: id}} do
-      simulation = %Db.Simulation{id: id, nodes: [:nonode]}
+      simulation = %Db.Simulation{id: id}
       {:ok, _} = start_supervised({Storm.SimulationServer, simulation})
-      {:ok, lb} = start_supervised({LoadBalancerServer, simulation})
+      {:ok, lb} = start_supervised({LoadBalancerServer, %{simulation | hosts: [:nohost]}})
 
       {:ok, lb: lb}
     end
@@ -67,7 +67,7 @@ defmodule Storm.SessionServerTest do
     test "starts arrival_rate clients",
         %{state: state, lb: lb, session: %{id: id}} do
       allow(Fury, self(), lb)
-      expect Fury, :start_clients, fn :nonode, ^id, [_, _] -> :ok end
+      expect Fury, :start_clients, fn :"fury@nohost", ^id, [_, _] -> :ok end
 
       SessionServer.handle_info(:start_clients, state)
 
@@ -78,7 +78,7 @@ defmodule Storm.SessionServerTest do
     test "when less than arrival rate",
       %{state: state, lb: lb, session: %{id: id}} do
       allow(Fury, self(), lb)
-      expect Fury, :start_clients, fn :nonode, ^id, [_] -> :ok end
+      expect Fury, :start_clients, fn :"fury@nohost", ^id, [_] -> :ok end
       state = %{state | clients_started: 9}
 
       SessionServer.handle_info(:start_clients, state)

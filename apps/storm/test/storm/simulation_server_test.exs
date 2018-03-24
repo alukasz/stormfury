@@ -12,8 +12,7 @@ defmodule Storm.SimulationServerTest do
     id = make_ref()
     simulation = %Db.Simulation{
       id: id,
-      sessions: [%Db.Session{id: make_ref(), simulation_id: id}],
-      nodes: [:nonode]
+      sessions: [%Db.Session{id: make_ref(), simulation_id: id}]
     }
     state = %State{simulation: simulation}
 
@@ -32,10 +31,10 @@ defmodule Storm.SimulationServerTest do
       assert SimulationServer.init(simulation) == {:ok, state}
     end
 
-    test "sends message to start sessions", %{simulation: simulation} do
+    test "sends message to start slave nodes", %{simulation: simulation} do
       SimulationServer.init(simulation)
 
-      assert_receive :start_sessions
+      assert_receive :start_slaves
     end
   end
 
@@ -54,8 +53,8 @@ defmodule Storm.SimulationServerTest do
   describe "handle_info(:start_sessions, state)" do
     setup %{state: state, simulation: simulation} do
       {:ok, _} = start_supervised({SessionSupervisor, simulation})
-      simulation = %{simulation | nodes: [:n1, :n2, :n3]}
-      state = %{state | simulation: simulation}
+      simulation = %{simulation | hosts: [:n1, :n2, :n3]}
+      state = %{state | simulation: simulation, nodes: [:n1, :n2, :n3]}
 
       {:ok, state: state, simulation: simulation}
     end

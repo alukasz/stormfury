@@ -4,9 +4,10 @@ defmodule Storm.SimulationServer do
   alias Storm.Session
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)
+  @nodes Application.get_env(:storm, :nodes)
 
   defmodule State do
-    defstruct simulation: nil, clients_started: 0
+    defstruct simulation: nil, clients_started: 0, nodes: []
   end
 
   def start_link(%Db.Simulation{id: id} = simulation) do
@@ -18,7 +19,7 @@ defmodule Storm.SimulationServer do
   end
 
   def init(simulation) do
-    send(self(), :start_sessions)
+    send(self(), :start_slaves)
 
     {:ok, %State{simulation: simulation}}
   end
@@ -30,8 +31,20 @@ defmodule Storm.SimulationServer do
     {:reply, range, %{state | clients_started: new_started}}
   end
 
+  def handle_info(:start_slaves, %{simulation: %{hosts: hosts}} = state) do
+    nodes = for host <- hosts do
+      {:ok, node} = @nodes.start_node(host)
+
+      node
+    end
+    send(self(), :start_sessions)
+
+    {:noreply, %{state | nodes: nodes}}
+  end
+
   def handle_info(:start_sessions, %{simulation: simulation} = state) do
-    %{nodes: nodes, sessions: sessions, protocol_mod: protocol_mod,
+    %{nodes: nodes} = state
+    %{sessions: sessions, protocol_mod: protocol_mod,
       transport_mod: transport_mod, url: url} = simulation
 
     Enum.each(nodes, fn node ->
@@ -44,5 +57,4 @@ defmodule Storm.SimulationServer do
 
     {:noreply, state}
   end
-
 end

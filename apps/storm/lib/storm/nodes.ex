@@ -1,4 +1,9 @@
 defmodule Storm.Nodes do
+  @type host :: String.t
+
+  @callback start_node(host) :: {:ok, node() | :error, term}
+  @callback stop_node(node) :: :ok
+
   @storm_host Application.fetch_env!(:storm, :host)
 
   def start_node(host) do

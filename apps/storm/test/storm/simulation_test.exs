@@ -5,10 +5,7 @@ defmodule Storm.SimulationTest do
   alias Storm.SimulationServer
 
   setup do
-    simulation = %Db.Simulation{
-      id: make_ref(),
-      nodes: [:nonode]
-    }
+    simulation = %Db.Simulation{id: make_ref()}
 
     {:ok, simulation: simulation}
   end
