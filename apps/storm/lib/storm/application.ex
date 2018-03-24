@@ -5,6 +5,7 @@ defmodule Storm.Application do
 
   def start(_type, _args) do
     children = [
+      erl_boot_server(),
       {Registry, name: Storm.Simulation.Registry, keys: :unique},
       {Registry, name: Storm.SessionSupervisor.Registry, keys: :unique},
       {Registry, name: Storm.LoadBalancer.Registry, keys: :unique},
@@ -17,5 +18,15 @@ defmodule Storm.Application do
     ]
 
     Supervisor.start_link(children, opts)
+  end
+
+  defp erl_boot_server do
+    %{
+      id: :erl_boot_server,
+      start: {:erl_boot_server, :start_link, [[]]},
+      type: :worker,
+      restart: :permanent,
+      shutdown: 500
+    }
   end
 end

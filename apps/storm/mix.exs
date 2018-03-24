@@ -29,6 +29,7 @@ defmodule Storm.MixProject do
   defp deps do
     [
       {:db, in_umbrella: true},
+      {:fury, in_umbrella: true},
       {:mox, "~> 0.3", only: :test},
       {:poison, "~> 3.1"}
     ]

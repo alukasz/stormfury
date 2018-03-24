@@ -31,7 +31,7 @@ defmodule Storm.Simulation.LoadBalancerServerTest do
 
   describe "init/1" do
     test "initializes state", %{state: state} do
-      assert LoadBalancerServer.init([:nonode]) == {:ok, state}
+      assert LoadBalancerServer.init([:nonode]) == {:ok, %{state | nodes: [:"fury@nonode"]}}
     end
   end
 

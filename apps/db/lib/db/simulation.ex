@@ -10,7 +10,7 @@ defmodule Db.Simulation do
     :protocol_mod,
     :transport_mod,
     sessions: [],
-    nodes: []
+    hosts: []
   ]
 
   def get(id) do
