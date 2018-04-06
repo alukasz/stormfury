@@ -6,8 +6,7 @@ defmodule Fury.Application do
   def start(_type, _args) do
     children = [
       Fury.RegistrySupervisor,
-      Fury.ClientSupervisor,
-      Fury.SessionSupervisor
+      Fury.ClientSupervisor
     ]
     opts = [
       strategy: :one_for_one,

@@ -1,27 +1,20 @@
 defmodule Fury.Session do
-  alias Fury.SessionServer
-  alias Fury.SessionSupervisor
-  alias Fury.Session.Cache
+  alias Fury.Session.SessionServer
+  alias Fury.Session.SessionSupervisor
 
   defstruct [
     :id
   ]
 
-  def new(%Db.Session{} = session, %Db.Simulation{} = simulation) do
-    SessionSupervisor.start_child(session, simulation)
+  def start(simulation_id, session_id) do
+    SessionSupervisor.start_child(supervisor_name(simulation_id), session_id)
   end
 
-  def start_clients(id, ids) do
-    GenServer.call(SessionServer.name(id), {:start_clients, ids})
+  def name(id) do
+    {:via, Registry, {Fury.Registry.Session, id}}
   end
 
-  def get_request(id, request_id) do
-    case Cache.get(id, request_id) do
-      :error ->
-        GenServer.call(SessionServer.name(id), {:get_request, request_id})
-
-      request ->
-        request
-    end
+  def supervisor_name(id) do
+    {:via, Registry, {Fury.Registry.SessionSupervisor, id}}
   end
 end

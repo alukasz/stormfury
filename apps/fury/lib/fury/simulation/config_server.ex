@@ -13,10 +13,6 @@ defmodule Fury.Simulation.ConfigServer do
     {:ok, simulation}
   end
 
-  defp name(%{id: id}) do
-    Config.name(id)
-  end
-
   def handle_call(:simulation, _from, simulation) do
     {:reply, simulation, simulation}
   end
@@ -34,4 +30,9 @@ defmodule Fury.Simulation.ConfigServer do
   def handle_call({:client, id}, _from, simulation) do
     {:reply, id, simulation}
   end
+
+  defp name(%{id: id}) do
+    Config.name(id)
+  end
+
 end
