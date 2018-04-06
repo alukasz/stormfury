@@ -9,13 +9,14 @@ defmodule Fury.Session.SessionServer do
       :id,
       :simulation_id,
       :session,
+      requests: []
     ]
 
     def new([simulation_id, session_id]) do
       %State{
         id: session_id,
         simulation_id: simulation_id,
-        session: Config.session(simulation_id, session_id)
+        session: Config.session(simulation_id, session_id),
       }
     end
   end
@@ -27,7 +28,20 @@ defmodule Fury.Session.SessionServer do
   end
 
   def init(opts) do
+    send(self(), :parse_scenario)
     {:ok, State.new(opts)}
+  end
+
+  def handle_call({:get_request, id}, _, %{requests: requests} = state) do
+    request = Enum.at(requests, id, :error)
+
+    {:reply, request, state}
+  end
+
+  def handle_info(:parse_scenario, %{session: %{scenario: scenario}} = state) do
+    {:ok, requests} = Storm.DSL.parse(scenario)
+
+    {:noreply, %{state | requests: requests ++ [:done]}}
   end
 
   defp name(id) do

@@ -10,12 +10,6 @@ defmodule Fury.SimulationTest do
   end
 
   describe "start/1" do
-    setup do
-      {:ok, _} = start_supervised(Fury.SimulationsSupervisor)
-
-      :ok
-    end
-
     test "starts new SimulationServer", %{simulation: simulation} do
       {:ok, _} = Simulation.start(simulation)
 

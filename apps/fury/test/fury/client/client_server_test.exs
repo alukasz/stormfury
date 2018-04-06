@@ -7,37 +7,15 @@ defmodule Fury.Client.ClientServerTest do
   alias Fury.Simulation
   alias Fury.Client.ClientServer
   alias Fury.Client.ClientServer.State
+  alias Fury.Session.SessionServer
   alias Fury.Mock.{Protocol, Storm, Transport}
 
-  setup :start_session_server
   setup :default_stubs
-  setup do
-    session = %Session{
-      id: make_ref()
-    }
-    simulation = %Simulation{
-      id: make_ref(),
-      sessions: [session],
-      url: "localhost",
-      transport_mod: Transport,
-      protocol_mod: Protocol,
-    }
-    state = %State{
-      id: :id,
-      session_id: session.id,
-      simulation_id: simulation.id,
-      url: "localhost",
-      transport_mod: Transport,
-      protocol_mod: Protocol,
-      protocol_state: %{},
-    }
-
-    {:ok, session: session, simulation: simulation, state: state}
-  end
+  setup :default_structs
 
   describe "start_link/1" do
-    setup :start_config_server
     setup :set_mox_global
+    setup :start_config_server
 
     test "starts new ClientServer",
         %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
@@ -148,16 +126,16 @@ defmodule Fury.Client.ClientServerTest do
       {:ok, state: %{state | transport: self()}}
     end
 
-    test "when request is found increases state.request_id", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> {:ok, {:think, 1}} end
-      expected_request_id = state.request_id + 1
+    test "when request is found increases state.request", %{state: state} = context do
+      start_session_server(context, "think 10")
+      expected_request_id = state.request + 1
 
-      assert {:noreply, %{request_id: ^expected_request_id}} =
+      assert {:noreply, %{request: ^expected_request_id}} =
         ClientServer.handle_info(:make_request, state)
     end
 
-    test "when request is found updates protocol_state", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> {:ok, {:push, "data"}} end
+    test "updates state.protocol_state", %{state: state} = context do
+      start_session_server(context, "push \"data\"")
       stub Protocol, :format, fn _, _ -> {:ok, "data", :updated_state} end
       stub Transport, :push, fn _, _ -> :ok end
 
@@ -165,23 +143,16 @@ defmodule Fury.Client.ClientServerTest do
         ClientServer.handle_info(:make_request, state)
     end
 
-    test "when request not found unmodified state", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
+    test "when request not found unmodified state", %{state: state} = context do
+      start_session_server(context, "push \"data\"")
+      state = %{state | request: 1_000}
 
       assert ClientServer.handle_info(:make_request, state) ==
         {:noreply, state}
     end
 
-    test "invokes StormBridge to get request", %{state: state} do
-      expect Storm, :get_request, fn _, _ -> {:error, :not_found} end
-
-      ClientServer.handle_info(:make_request, state)
-
-      verify!()
-    end
-
-    test "performs received request", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> {:ok, {:push, "data"}} end
+    test "performs received request", %{state: state} = context do
+      start_session_server(context, "push \"data\"")
       expect Protocol, :format, fn {:push, "data"}, _ -> {:ok, "data", %{}} end
       expect Transport, :push, fn _, "data" -> :ok end
 
@@ -190,8 +161,8 @@ defmodule Fury.Client.ClientServerTest do
       verify!()
     end
 
-    test "makes next request", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> {:ok, {:push, "data"}} end
+    test "makes next request", %{state: state} = context do
+      start_session_server(context, "push \"data\"")
       stub Protocol, :format, fn _, _ -> {:ok, "data", %{}} end
       stub Transport, :push, fn _, _ -> :ok end
 
@@ -200,8 +171,8 @@ defmodule Fury.Client.ClientServerTest do
       assert_receive :make_request
     end
 
-    test "does not make request on {:think, time}", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> {:ok, {:think, 1}} end
+    test "does not make request on {:think, time}", %{state: state} = context do
+      start_session_server(context, "think 10")
       stub Protocol, :format, fn _, _ -> send(self(), :protocol_called) end
       stub Transport, :push, fn _, _ -> send(self(), :tranport_called) end
 
@@ -210,8 +181,8 @@ defmodule Fury.Client.ClientServerTest do
       refute_receive _
     end
 
-    test "waits before next request on {:think, time}", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> {:ok, {:think, 0}} end
+    test "waits before next request on {:think, time}", %{state: state} = context do
+      start_session_server(context, "think 0")
 
       ClientServer.handle_info(:make_request, state)
 
@@ -219,19 +190,17 @@ defmodule Fury.Client.ClientServerTest do
       assert_receive :make_request
     end
 
-    test "does not make request when there aren't any", %{state: state} do
-      pid = self()
-      stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
-      stub Protocol, :format, fn _, _ -> send(pid, :protocol_called) end
-      stub Transport, :push, fn _, _ -> send(pid, :tranport_called) end
+    test "does not make request when there aren't any", %{state: state} = context do
+      start_session_server(context, "think 10")
+      stub Protocol, :format, fn _, _ -> send(self(), :protocol_called) end
+      stub Transport, :push, fn _, _ -> send(self(), :tranport_called) end
 
-      ClientServer.handle_info(:make_request, state)
+      ClientServer.handle_info(:make_request, %{state | request: 1_000})
 
       refute_receive _
     end
 
     test "does not make request when not connected", %{state: state} do
-      stub Storm, :get_request, fn _, _ -> send(self(), :bridge_called) end
       state = %{state | transport: :not_connected}
 
       ClientServer.handle_info(:make_request, state)
@@ -240,28 +209,60 @@ defmodule Fury.Client.ClientServerTest do
     end
   end
 
+  defp default_structs(_) do
+    session = %Session{
+      id: make_ref(),
+      scenario: "push \"data\""
+    }
+    simulation = %Simulation{
+      id: make_ref(),
+      sessions: [session],
+      url: "localhost",
+      transport_mod: Transport,
+      protocol_mod: Protocol,
+    }
+    state = %State{
+      id: :id,
+      session_id: session.id,
+      simulation_id: simulation.id,
+      url: "localhost",
+      transport_mod: Transport,
+      protocol_mod: Protocol,
+      protocol_state: %{},
+    }
+
+    {:ok, session: session, simulation: simulation, state: state}
+  end
+
+  defp default_stubs(_) do
+    stub Protocol, :init, fn -> %{} end
+    stub Protocol, :format, fn request, state -> {:ok, request, state} end
+    stub Transport, :connect, fn _, _ -> {:ok, self()} end
+    stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
+
+    :ok
+  end
+
   defp start_config_server(%{simulation: simulation}) do
     {:ok, _} = start_supervised({Fury.Simulation.ConfigServer, simulation})
 
     :ok
   end
 
-  defp start_session_server(_) do
-    session_id = make_ref()
-    # simulation = %Db.Simulation{}
-    # session = %Db.Session{id: session_id}
-    # {:ok, pid} = start_supervised({SessionServer, [session, simulation]})
-
-    {:ok, session_id: session_id}
-  end
-
-  defp default_stubs(_) do
-    # allow(Storm, self(), session_server_pid)
-
-    stub Protocol, :init, fn -> %{} end
-    stub Transport, :connect, fn _, _ -> {:ok, self()} end
-    stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
+  defp start_session_server(context, scenario) do
+    context = update_session_scenario(context, scenario)
+    start_config_server(context)
+    %{simulation: %{id: simulation_id}, session: %{id: session_id}} = context
+    opts = [start: {SessionServer, :start_link, [simulation_id, session_id]}]
+    {:ok, _} = start_supervised(SessionServer, opts)
 
     :ok
+  end
+
+  defp update_session_scenario(context, scenario) do
+    %{simulation: simulation, session: session} = context
+    session = %{session | scenario: scenario}
+    simulation = %{simulation | sessions: [session]}
+    %{context | simulation: simulation}
   end
 end

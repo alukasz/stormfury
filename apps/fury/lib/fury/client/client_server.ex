@@ -37,7 +37,7 @@ defmodule Fury.Client.ClientServer do
   end
 
   def init(opts) do
-    send(self(), :connect)
+    connect()
 
     {:ok, State.new(opts)}
   end
@@ -71,14 +71,17 @@ defmodule Fury.Client.ClientServer do
     %{request: request_id, session_id: session_id} = state
 
     case Session.get_request(session_id, request_id) do
-      {:ok, :not_found} ->
+      :error ->
         {:noreply, state}
 
-      {:ok, {:think, time}} ->
-        schedule_request_after(:timer.seconds(time))
-        {:noreply, %{state | request_id: request_id + 1}}
+      :done ->
+        {:noreply, state}
 
-      {:ok, request} ->
+      {:think, time} ->
+        schedule_request_after(:timer.seconds(time))
+        {:noreply, %{state | request: request_id + 1}}
+
+      request ->
         protocol_state = do_make_request(request, state)
         schedule_request()
         {:noreply, %{state | protocol_state: protocol_state,

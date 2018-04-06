@@ -3,6 +3,7 @@ defmodule Fury.Session do
 
   defstruct [
     :id,
+    :scenario
   ]
 
   def start(simulation_id, session_id) do
@@ -10,7 +11,7 @@ defmodule Fury.Session do
   end
 
   def get_request(session_id, id) do
-    {:ok, :not_found}
+    GenServer.call(name(session_id), {:get_request, id})
   end
 
   def name(session_id) do

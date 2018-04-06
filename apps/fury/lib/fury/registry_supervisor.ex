@@ -1,8 +1,6 @@
 defmodule Fury.RegistrySupervisor do
   use Supervisor
 
-  alias Fury.Session
-
   def start_link(_) do
     Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end

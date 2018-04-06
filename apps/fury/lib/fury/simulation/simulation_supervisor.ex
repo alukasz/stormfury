@@ -12,7 +12,7 @@ defmodule Fury.Simulation.SimulationSuperisor do
       {Fury.Simulation.ConfigServer, simulation},
       {Fury.Simulation.SimulationServer, id},
       {Fury.Session.SessionSupervisor, id},
-      {Fury.Session.ClientSupervisor, id}
+      {Fury.Client.ClientSupervisor, id}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)
