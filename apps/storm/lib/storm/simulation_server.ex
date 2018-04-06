@@ -34,6 +34,7 @@ defmodule Storm.SimulationServer do
   def handle_info(:start_slaves, %{simulation: %{hosts: hosts}} = state) do
     nodes = for host <- hosts do
       {:ok, node} = @nodes.start_node(host)
+      :mnesia.change_config(:extra_db_nodes, [node])
 
       node
     end

@@ -53,5 +53,6 @@ defmodule Storm.Nodes do
 
   defp start_application(node) do
     :rpc.block_call(node, Application, :ensure_all_started, [:fury])
+    :rpc.block_call(node, Application, :ensure_all_started, [:db])
   end
 end
