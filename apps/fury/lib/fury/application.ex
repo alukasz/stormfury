@@ -5,7 +5,7 @@ defmodule Fury.Application do
 
   def start(_type, _args) do
     children = [
-      {Registry, name: Fury.Session.Registry, keys: :unique},
+      Fury.RegistrySupervisor,
       Fury.ClientSupervisor,
       Fury.SessionSupervisor
     ]
