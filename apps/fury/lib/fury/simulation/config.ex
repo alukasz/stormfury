@@ -7,8 +7,8 @@ defmodule Fury.Simulation.Config do
     GenServer.call(name(simulation_id), {:session, session_id})
   end
 
-  def client(simulation_id, client_id) do
-    GenServer.call(name(simulation_id), {:client, client_id})
+  def client(simulation_id) do
+    GenServer.call(name(simulation_id), :client)
   end
 
   def name(simulation_id) do

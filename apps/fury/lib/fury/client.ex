@@ -1,4 +1,18 @@
 defmodule Fury.Client do
+  alias Fury.Client.ClientSupervisor
+
+  defstruct [
+    :id,
+    :url,
+    :transport_mod,
+    :protocol_mod,
+    :protocol_state,
+  ]
+
+  def start(simulation_id, session_id, id) do
+    ClientSupervisor.start_child(supervisor_name(simulation_id), session_id, id)
+  end
+
   def connect(transport_mod, url) do
     transport_mod.connect(url, client: self())
   end
@@ -10,5 +24,9 @@ defmodule Fury.Client do
     else
       _ -> state
     end
+  end
+
+  def supervisor_name(simulation_id) do
+    {:via, Registry, {Fury.Registry.ClientSupervisor, simulation_id}}
   end
 end

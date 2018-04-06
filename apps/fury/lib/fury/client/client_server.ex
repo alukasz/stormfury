@@ -1,39 +1,45 @@
-defmodule Fury.ClientServer do
+defmodule Fury.Client.ClientServer do
   use GenServer
 
   alias Fury.Client
   alias Fury.Session
+  alias Fury.Simulation.Config
   alias Storm.DSL.Util
 
   defmodule State do
     defstruct [
       :id,
       :session_id,
+      :simulation_id,
       :url,
       :transport_mod,
       :protocol_mod,
       :protocol_state,
-      request_id: 0,
+      request: 0,
       transport: :not_connected
     ]
+
+    def new([simulation_id, session_id, id]) do
+      config = Config.client(simulation_id)
+      state = %State{
+        id: id,
+        session_id: session_id,
+        simulation_id: simulation_id,
+        protocol_state: config.protocol_mod.init()
+      }
+
+      Map.merge(state, config)
+    end
   end
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts)
+  def start_link(simulation_id, opts) do
+    GenServer.start_link(__MODULE__, [simulation_id | opts])
   end
 
-  def init([id, session_id, url, transport_mod, protocol_mod]) do
-    state = %State{
-      id: id,
-      session_id: session_id,
-      url: url,
-      transport_mod: transport_mod,
-      protocol_mod: protocol_mod,
-      protocol_state: protocol_mod.init()
-    }
-    connect()
+  def init(opts) do
+    send(self(), :connect)
 
-    {:ok, state}
+    {:ok, State.new(opts)}
   end
 
   def handle_info(:connect, state) do
@@ -62,7 +68,7 @@ defmodule Fury.ClientServer do
     {:noreply, state}
   end
   def handle_info(:make_request, state) do
-    %{request_id: request_id, session_id: session_id} = state
+    %{request: request_id, session_id: session_id} = state
 
     case Session.get_request(session_id, request_id) do
       {:ok, :not_found} ->
@@ -76,7 +82,7 @@ defmodule Fury.ClientServer do
         protocol_state = do_make_request(request, state)
         schedule_request()
         {:noreply, %{state | protocol_state: protocol_state,
-                             request_id: request_id + 1}}
+                             request: request_id + 1}}
     end
   end
 

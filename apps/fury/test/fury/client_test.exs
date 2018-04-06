@@ -1,10 +1,41 @@
 defmodule Fury.ClientTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Mox
 
   alias Fury.Client
+  alias Fury.Session
+  alias Fury.Simulation
   alias Fury.Mock.{Protocol, Transport}
+
+  setup do
+    session = %Session{
+      id: make_ref()
+    }
+    simulation = %Simulation{
+      id: make_ref(),
+      protocol_mod: Protocol,
+      transport_mod: Transport,
+      sessions: [session]
+    }
+
+    {:ok, simulation: simulation, session: session}
+  end
+
+  describe "start/3" do
+    setup :start_config_server
+    setup :start_client_supervisor
+    setup :set_mox_global
+
+    test "starts new ClientServer",
+        %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
+      stub Protocol, :init, fn -> %{} end
+
+      {:ok, pid} = Client.start(simulation_id, session_id, :id)
+
+      assert is_pid(pid)
+    end
+  end
 
   describe "connect/2" do
     setup do
@@ -58,5 +89,17 @@ defmodule Fury.ClientTest do
 
     assert Client.make_request(Transport, self(), Protocol, %{}, "data") ==
       :updated_state
+  end
+
+  defp start_config_server(%{simulation: simulation}) do
+    {:ok, _} = start_supervised({Fury.Simulation.ConfigServer, simulation})
+
+    :ok
+  end
+
+  defp start_client_supervisor(%{simulation: %{id: id}}) do
+    {:ok, _} = start_supervised({Fury.Client.ClientSupervisor, id})
+
+    :ok
   end
 end

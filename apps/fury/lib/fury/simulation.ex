@@ -4,6 +4,10 @@ defmodule Fury.Simulation do
 
   defstruct [
     :id,
+    :url,
+    :duration,
+    :protocol_mod,
+    :transport_mod,
     sessions: []
   ]
 

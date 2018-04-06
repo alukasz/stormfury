@@ -1,55 +1,75 @@
-defmodule Fury.ClientServerTest do
+defmodule Fury.Client.ClientServerTest do
   use ExUnit.Case
 
   import Mox
 
-  alias Fury.ClientServer
-  alias Fury.ClientServer.State
-  alias Fury.SessionServer
+  alias Fury.Session
+  alias Fury.Simulation
+  alias Fury.Client.ClientServer
+  alias Fury.Client.ClientServer.State
   alias Fury.Mock.{Protocol, Storm, Transport}
 
   setup :start_session_server
   setup :default_stubs
-  setup %{session_id: session_id} do
-
-    start_opts = [:id, session_id, "localhost", Transport, Protocol]
+  setup do
+    session = %Session{
+      id: make_ref()
+    }
+    simulation = %Simulation{
+      id: make_ref(),
+      sessions: [session],
+      url: "localhost",
+      transport_mod: Transport,
+      protocol_mod: Protocol,
+    }
     state = %State{
       id: :id,
-      session_id: session_id,
+      session_id: session.id,
+      simulation_id: simulation.id,
       url: "localhost",
       transport_mod: Transport,
       protocol_mod: Protocol,
       protocol_state: %{},
     }
 
-    {:ok, start_opts: start_opts, state: state}
+    {:ok, session: session, simulation: simulation, state: state}
   end
 
   describe "start_link/1" do
+    setup :start_config_server
     setup :set_mox_global
 
-    test "starts new ClientServer", %{start_opts: opts} do
-      assert {:ok, pid} = ClientServer.start_link(opts)
+    test "starts new ClientServer",
+        %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
+      {:ok, pid} = ClientServer.start_link(simulation_id, [session_id, :id])
 
       assert is_pid(pid)
     end
   end
 
   describe "init/1" do
-    test "builds state", %{start_opts: opts, state: state} do
-      assert ClientServer.init(opts) == {:ok, state}
+    setup :start_config_server
+    setup %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
+      init_opts = [simulation_id, session_id, :id]
+
+      {:ok, init_opts: init_opts}
     end
 
-    test "initializes session", %{start_opts: opts} do
+    test "initializes state", %{init_opts: init_opts, state: state} do
+      assert ClientServer.init(init_opts) ==
+        {:ok, state}
+    end
+
+    test "initializes session", %{init_opts: init_opts} do
       expect Protocol, :init, fn -> %{} end
 
-      ClientServer.init(opts)
+      ClientServer.init(init_opts)
 
       verify!()
     end
 
-    test "sends message to connect", %{start_opts: opts} do
-      ClientServer.init(opts)
+    test "sends message to connect", %{init_opts: init_opts} do
+      ClientServer.init(init_opts)
 
       assert_receive :connect
     end
@@ -220,17 +240,23 @@ defmodule Fury.ClientServerTest do
     end
   end
 
-  defp start_session_server(context) do
-    session_id = :"client_server_test_#{context.line}"
-    simulation = %Db.Simulation{}
-    session = %Db.Session{id: session_id}
-    {:ok, pid} = start_supervised({SessionServer, [session, simulation]})
+  defp start_config_server(%{simulation: simulation}) do
+    {:ok, _} = start_supervised({Fury.Simulation.ConfigServer, simulation})
 
-    {:ok, session_id: session_id, session_server_pid: pid}
+    :ok
   end
 
-  defp default_stubs(%{session_server_pid: session_server_pid}) do
-    allow(Storm, self(), session_server_pid)
+  defp start_session_server(_) do
+    session_id = make_ref()
+    # simulation = %Db.Simulation{}
+    # session = %Db.Session{id: session_id}
+    # {:ok, pid} = start_supervised({SessionServer, [session, simulation]})
+
+    {:ok, session_id: session_id}
+  end
+
+  defp default_stubs(_) do
+    # allow(Storm, self(), session_server_pid)
 
     stub Protocol, :init, fn -> %{} end
     stub Transport, :connect, fn _, _ -> {:ok, self()} end

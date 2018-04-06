@@ -13,13 +13,9 @@ defmodule Fury.RegistrySupervisor do
       {Registry, name: Fury.Registry.Config, keys: :unique},
       {Registry, name: Fury.Registry.SessionSupervisor, keys: :unique},
       {Registry, name: Fury.Registry.Session, keys: :unique},
-      {Registry, name: Fury.Session.Registry, keys: :unique},
+      {Registry, name: Fury.Registry.ClientSupervisor, keys: :unique},
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
-  end
-
-  defp name(id) do
-    Session.name(id)
   end
 end

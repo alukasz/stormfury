@@ -28,6 +28,6 @@ defmodule Fury.Session.SessionSupervisor do
   end
 
   defp session_spec(session_id) do
-     child_spec = {SessionServer, session_id}
+    {SessionServer, session_id}
   end
 end

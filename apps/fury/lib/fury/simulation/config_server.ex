@@ -27,8 +27,14 @@ defmodule Fury.Simulation.ConfigServer do
     {:reply, session, simulation}
   end
 
-  def handle_call({:client, id}, _from, simulation) do
-    {:reply, id, simulation}
+  def handle_call(:client, _from, simulation) do
+    client = %{
+      url: simulation.url,
+      transport_mod: simulation.transport_mod,
+      protocol_mod: simulation.protocol_mod
+    }
+
+    {:reply, client, simulation}
   end
 
   defp name(%{id: id}) do

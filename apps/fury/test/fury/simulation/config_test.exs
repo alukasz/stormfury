@@ -5,15 +5,15 @@ defmodule Fury.Simulation.ConfigTest do
   alias Fury.Simulation
   alias Fury.Simulation.Config
   alias Fury.Simulation.ConfigServer
+  alias Fury.Mock.{Protocol, Transport}
 
   setup do
     simulation = %Simulation{
       id: make_ref(),
-      sessions: [
-        %Session{
-          id: make_ref()
-        }
-      ]
+      url: "localhost",
+      transport_mod: Transport,
+      protocol_mod: Protocol,
+      sessions: [%Session{id: make_ref()}]
     }
     {:ok, _} = start_supervised({ConfigServer, simulation})
 
@@ -42,9 +42,13 @@ defmodule Fury.Simulation.ConfigTest do
     end
   end
 
-  describe "client/2" do
+  describe "client/1" do
     test "returns Client config", %{simulation: simulation} do
-      assert Config.client(simulation.id, :id) == :id
+      assert Config.client(simulation.id) == %{
+        url: "localhost",
+        transport_mod: Transport,
+        protocol_mod: Protocol,
+      }
     end
   end
 end
