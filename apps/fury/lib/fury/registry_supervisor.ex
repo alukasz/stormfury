@@ -8,6 +8,7 @@ defmodule Fury.RegistrySupervisor do
   def init(_) do
     children = [
       {Registry, name: Fury.Registry.Simulation, keys: :unique},
+      {Registry, name: Fury.Registry.Config, keys: :unique},
       {Registry, name: Fury.Session.Registry, keys: :unique},
     ]
 

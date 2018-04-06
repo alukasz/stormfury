@@ -7,9 +7,10 @@ defmodule Fury.Simulation.SimulationSuperisor do
     Supervisor.start_link(__MODULE__, simulation)
   end
 
-  def init(simulation) do
+  def init(%Simulation{id: id} = simulation) do
     children = [
-      {Fury.Simulation.SimulationServer, simulation}
+      {Fury.Simulation.ConfigServer, simulation},
+      {Fury.Simulation.SimulationServer, id}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

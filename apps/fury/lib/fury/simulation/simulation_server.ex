@@ -2,6 +2,7 @@ defmodule Fury.Simulation.SimulationServer do
   use GenServer
 
   alias Fury.Simulation
+  alias Fury.Simulation.Config
 
   defmodule State do
     defstruct [
@@ -9,23 +10,23 @@ defmodule Fury.Simulation.SimulationServer do
       :simulation
     ]
 
-    def new(%Simulation{id: id} = simulation) do
+    def new(id) do
       %State{
         id: id,
-        simulation: simulation
+        simulation: Config.simulation(id)
       }
     end
   end
 
-  def start_link(%Simulation{} = simulation) do
-    GenServer.start_link(__MODULE__, simulation, name: name(simulation))
+  def start_link(id) do
+    GenServer.start_link(__MODULE__, id, name: name(id))
   end
 
-  def init(simulation) do
-    {:ok, State.new(simulation)}
+  def init(id) do
+    {:ok, State.new(id)}
   end
 
-  defp name(simulation) do
-    Simulation.name(simulation)
+  defp name(id) do
+    Simulation.name(id)
   end
 end

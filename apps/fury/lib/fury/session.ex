@@ -3,6 +3,10 @@ defmodule Fury.Session do
   alias Fury.SessionSupervisor
   alias Fury.Session.Cache
 
+  defstruct [
+    :id
+  ]
+
   def new(%Db.Session{} = session, %Db.Simulation{} = simulation) do
     SessionSupervisor.start_child(session, simulation)
   end

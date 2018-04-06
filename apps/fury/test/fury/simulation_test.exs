@@ -24,9 +24,16 @@ defmodule Fury.SimulationTest do
   end
 
   describe "name/1" do
-    test "returns via tuple for SimulationServer", %{simulation: simulation} do
+    test "returns via tuple for SimulationServer for struct",
+        %{simulation: simulation} do
       assert Simulation.name(simulation) ==
         {:via, Registry, {Fury.Registry.Simulation, simulation.id}}
+    end
+
+    test "returns via tuple for SimulationServer for term",
+        %{simulation: %{id: id}} do
+      assert Simulation.name(id) ==
+      {:via, Registry, {Fury.Registry.Simulation, id}}
     end
   end
 end

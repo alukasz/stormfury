@@ -3,7 +3,8 @@ defmodule Fury.Simulation do
   alias Fury.SimulationsSupervisor
 
   defstruct [
-    :id
+    :id,
+    sessions: []
   ]
 
   def start(%Simulation{} = simulation) do
@@ -11,6 +12,9 @@ defmodule Fury.Simulation do
   end
 
   def name(%Simulation{id: id}) do
+    {:via, Registry, {Fury.Registry.Simulation, id}}
+  end
+  def name(id) do
     {:via, Registry, {Fury.Registry.Simulation, id}}
   end
 end
