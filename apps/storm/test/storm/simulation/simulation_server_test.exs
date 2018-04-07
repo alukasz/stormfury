@@ -1,8 +1,8 @@
 defmodule Storm.SimulationServerTest do
   use ExUnit.Case, async: true
 
-  alias Storm.SimulationServer
-  alias Storm.SimulationServer.State
+  alias Storm.Simulation.SimulationServer
+  alias Storm.Simulation.SimulationServer.State
 
   setup do
     id = make_ref()

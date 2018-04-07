@@ -1,4 +1,4 @@
-defmodule Storm.SimulationServer do
+defmodule Storm.Simulation.SimulationServer do
   use GenServer
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)

@@ -2,7 +2,7 @@ defmodule Storm.SimulationTest do
   use ExUnit.Case, async: true
 
   alias Storm.Simulation
-  alias Storm.SimulationServer
+  alias Storm.Simulation.SimulationServer
 
   setup do
     simulation = %Db.Simulation{id: make_ref()}

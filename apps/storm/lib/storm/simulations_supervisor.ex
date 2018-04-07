@@ -1,7 +1,7 @@
 defmodule Storm.SimulationsSupervisor do
   use DynamicSupervisor
 
-  alias Storm.SimulationSuperisor
+  alias Storm.Simulation.SimulationSuperisor
 
   def start_link(_) do
     DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)

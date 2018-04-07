@@ -1,5 +1,8 @@
-defmodule Storm.SimulationSuperisor do
+defmodule Storm.Simulation.SimulationSuperisor do
   use Supervisor
+
+  alias Storm.Simulation.LoadBalancerServer
+  alias Storm.Simulation.SimulationServer
 
   def start_link(%Db.Simulation{} = simulation) do
     Supervisor.start_link(__MODULE__, simulation)
@@ -7,8 +10,8 @@ defmodule Storm.SimulationSuperisor do
 
   def init(simulation) do
     children = [
-      {Storm.Simulation.LoadBalancerServer, simulation},
-      {Storm.SimulationServer, simulation},
+      {LoadBalancerServer, simulation},
+      {SimulationServer, simulation},
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
