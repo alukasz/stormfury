@@ -6,6 +6,7 @@ defmodule Fury.Application do
   def start(_type, _args) do
     children = [
       Fury.RegistrySupervisor,
+      Fury.Server,
       Fury.SimulationsSupervisor
     ]
     opts = [
