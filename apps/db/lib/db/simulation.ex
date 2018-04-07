@@ -9,8 +9,7 @@ defmodule Db.Simulation do
     :duration,
     :protocol_mod,
     :transport_mod,
-    sessions: [],
-    hosts: []
+    sessions: []
   ]
 
   def get(id) do
