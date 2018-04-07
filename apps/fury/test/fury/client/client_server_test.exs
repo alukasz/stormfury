@@ -8,14 +8,18 @@ defmodule Fury.Client.ClientServerTest do
   alias Fury.Client.ClientServer
   alias Fury.Client.ClientServer.State
   alias Fury.Session.SessionServer
-  alias Fury.Mock.{Protocol, Storm, Transport}
+  alias Fury.Mock.{Protocol, Transport}
 
-  setup :default_stubs
   setup :default_structs
 
   describe "start_link/1" do
     setup :set_mox_global
     setup :start_config_server
+    setup do
+      stub Protocol, :init, fn -> %{} end
+
+      :ok
+    end
 
     test "starts new ClientServer",
         %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
@@ -28,6 +32,7 @@ defmodule Fury.Client.ClientServerTest do
   describe "init/1" do
     setup :start_config_server
     setup %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
+      stub Protocol, :init, fn -> %{} end
       init_opts = [simulation_id, session_id, :id]
 
       {:ok, init_opts: init_opts}
@@ -232,15 +237,6 @@ defmodule Fury.Client.ClientServerTest do
     }
 
     {:ok, session: session, simulation: simulation, state: state}
-  end
-
-  defp default_stubs(_) do
-    stub Protocol, :init, fn -> %{} end
-    stub Protocol, :format, fn request, state -> {:ok, request, state} end
-    stub Transport, :connect, fn _, _ -> {:ok, self()} end
-    stub Storm, :get_request, fn _, _ -> {:error, :not_found} end
-
-    :ok
   end
 
   defp start_config_server(%{simulation: simulation}) do
