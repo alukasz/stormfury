@@ -7,7 +7,6 @@ defmodule Storm.SimulationSuperisor do
 
   def init(simulation) do
     children = [
-      {Storm.SessionSupervisor, simulation},
       {Storm.Simulation.LoadBalancerServer, simulation},
       {Storm.SimulationServer, simulation},
     ]

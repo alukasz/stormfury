@@ -1,8 +1,6 @@
 defmodule Storm.SimulationServer do
   use GenServer
 
-  alias Storm.Session
-
   @fury_bridge Application.get_env(:storm, :fury_bridge)
   @nodes Application.get_env(:storm, :nodes)
 
@@ -38,20 +36,7 @@ defmodule Storm.SimulationServer do
 
       node
     end
-    send(self(), :start_sessions)
 
     {:noreply, %{state | nodes: nodes}}
-  end
-
-  def handle_info(:start_sessions, %{simulation: simulation} = state) do
-    %{nodes: nodes} = state
-    %{id: simulation_id, sessions: sessions} = simulation
-
-    Enum.each nodes, fn node ->
-      @fury_bridge.start_sessions(node, simulation_id)
-    end
-    Enum.map(sessions, &Session.new(&1))
-
-    {:noreply, state}
   end
 end
