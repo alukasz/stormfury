@@ -9,7 +9,6 @@ defmodule Fury.RegistrySupervisor do
     children = [
       {Registry, name: Fury.Registry.Simulation, keys: :unique},
       {Registry, name: Fury.Registry.Config, keys: :unique},
-      {Registry, name: Fury.Registry.SessionSupervisor, keys: :unique},
       {Registry, name: Fury.Registry.Session, keys: :unique},
       {Registry, name: Fury.Registry.ClientSupervisor, keys: :unique},
     ]

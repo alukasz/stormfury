@@ -7,11 +7,11 @@ defmodule Fury.Simulation.SimulationSuperisor do
     Supervisor.start_link(__MODULE__, simulation)
   end
 
-  def init(%Simulation{id: id} = simulation) do
+  def init(%Simulation{id: id, sessions: sessions} = simulation) do
     children = [
       {Fury.Simulation.ConfigServer, simulation},
       {Fury.Simulation.SimulationServer, id},
-      {Fury.Session.SessionSupervisor, id},
+      {Fury.Session.SessionSupervisor, [id, sessions]},
       {Fury.Client.ClientSupervisor, id}
     ]
 
