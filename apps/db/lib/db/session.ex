@@ -8,8 +8,13 @@ defmodule Db.Session do
     :clients,
     :arrival_rate,
     :scenario,
-    :simulation_id
+    :simulation_id,
+    clients_started: 0
   ]
+
+  def get(id) do
+    Repo.get(Session, id)
+  end
 
   def insert(%Session{} = session) do
     Repo.insert(session)

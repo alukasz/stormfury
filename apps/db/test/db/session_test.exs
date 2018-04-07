@@ -4,6 +4,18 @@ defmodule Db.SessionTest do
   alias Db.Repo
   alias Db.Session
 
+  describe "get/1" do
+    test "returns Session" do
+      Repo.insert(%Session{id: 42})
+
+      assert %Session{id: 42} = Session.get(42)
+    end
+
+    test "returns nil when Session not found" do
+      refute Session.get(42)
+    end
+  end
+
   describe "insert/1" do
     test "inserts session" do
       assert :ok = Session.insert(%Session{id: 42})
