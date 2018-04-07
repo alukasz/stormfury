@@ -5,7 +5,7 @@ defmodule Storm.SimulationServerTest do
 
   alias Storm.Simulation.SimulationServer
   alias Storm.Simulation.SimulationServer.State
-  alias Storm.Mock.Fury
+  alias Storm.Mock
 
   setup do
     id = make_ref()
@@ -45,7 +45,7 @@ defmodule Storm.SimulationServerTest do
 
   describe "handle_info(:initialize, _)" do
     setup do
-      stub Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
+      stub Mock.Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
 
       :ok
     end
@@ -56,8 +56,14 @@ defmodule Storm.SimulationServerTest do
       assert_receive :perform
     end
 
+    test "creates pg2 group for remote simulations", %{state: state} do
+      SimulationServer.handle_info(:initialize, state)
+
+      assert Fury.group(state.simulation.id) in :pg2.which_groups()
+    end
+
     test "starts remote simulations", %{state: state} do
-      expect Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
+      expect Mock.Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
 
       SimulationServer.handle_info(:initialize, state)
 

@@ -1,26 +1,25 @@
-defmodule Storm.Simulation.LoadBalancerServer do
+defmodule Storm.Dispatcher.DispatcherServer do
   use GenServer
 
+  alias Storm.Dispatcher
+
   @fury_bridge Application.get_env(:storm, :fury_bridge)
-  @registry Storm.LoadBalancer.Registry
 
   defmodule State do
-    defstruct nodes: [], to_start: []
+    defstruct [
+      :simulation_id,
+      to_start: []
+    ]
   end
 
-  def start_link(%Db.Simulation{id: id, hosts: hosts}) do
-    GenServer.start_link(__MODULE__, hosts, name: name(id))
+  def start_link(simulation_id) do
+    GenServer.start_link(__MODULE__, simulation_id, name: name(simulation_id))
   end
 
-  def name(id) do
-    {:via, Registry, {@registry, id}}
-  end
-
-  def init(hosts) do
+  def init(simulation_id) do
     schedule_start_clients()
-    nodes = Enum.map(hosts, &(:"fury@#{&1}"))
 
-    {:ok, %State{nodes: nodes}}
+    {:ok, %State{simulation_id: simulation_id}}
   end
 
   def handle_call({:add_clients, clients}, _, state) do
@@ -36,9 +35,11 @@ defmodule Storm.Simulation.LoadBalancerServer do
   end
   def handle_info(:start_clients, state) do
     schedule_start_clients()
-    %{nodes: nodes, to_start: clients} = state
+    %{simulation_id: simulation_id, to_start: clients} = state
 
-    nodes
+    simulation_id
+    |> Fury.group()
+    |> :pg2.get_members()
     |> zip_with_clients(clients)
     |> group_by_node()
     |> group_by_sessions()
@@ -76,5 +77,9 @@ defmodule Storm.Simulation.LoadBalancerServer do
 
   defp schedule_start_clients do
     Process.send_after(self(), :start_clients, :timer.seconds(1))
+  end
+
+  defp name(id) do
+    Dispatcher.name(id)
   end
 end

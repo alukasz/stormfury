@@ -36,7 +36,6 @@ defmodule Storm.SimulationTest do
     setup :start_server
 
     test "returns range of clients ids", %{simulation: %{id: simulation_id}} do
-
       assert 1..10 = Simulation.get_ids(simulation_id, 10)
       assert 11..20 = Simulation.get_ids(simulation_id, 10)
     end

@@ -23,6 +23,8 @@ defmodule Fury.Simulation.SimulationServer do
   end
 
   def init(id) do
+    :pg2.join(Fury.group(id), self())
+
     {:ok, State.new(id)}
   end
 

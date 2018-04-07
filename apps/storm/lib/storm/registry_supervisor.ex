@@ -8,7 +8,7 @@ defmodule Storm.RegistrySupervisor do
   def init(_) do
     children = [
       {Registry, name: Storm.Registry.Simulation, keys: :unique},
-      {Registry, name: Storm.LoadBalancer.Registry, keys: :unique},
+      {Registry, name: Storm.Registry.Dispatcher, keys: :unique},
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

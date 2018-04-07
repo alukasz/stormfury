@@ -1,16 +1,16 @@
 defmodule Storm.Simulation.SimulationSuperisor do
   use Supervisor
 
-  alias Storm.Simulation.LoadBalancerServer
   alias Storm.Simulation.SimulationServer
+  alias Storm.Dispatcher.DispatcherServer
 
   def start_link(%Db.Simulation{} = simulation) do
     Supervisor.start_link(__MODULE__, simulation)
   end
 
-  def init(simulation) do
+  def init(%{id: id} = simulation) do
     children = [
-      # {LoadBalancerServer, simulation},
+      {DispatcherServer, id},
       {SimulationServer, simulation},
     ]
 

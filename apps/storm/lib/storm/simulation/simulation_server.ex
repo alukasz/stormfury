@@ -17,7 +17,7 @@ defmodule Storm.Simulation.SimulationServer do
   end
 
   def init(simulation) do
-    send(self(), :initialize)
+    Process.send_after(self(), :initialize, 50)
 
     {:ok, %State{simulation: simulation}}
   end
@@ -30,6 +30,7 @@ defmodule Storm.Simulation.SimulationServer do
   end
 
   def handle_info(:initialize, %{simulation: simulation} = state) do
+    create_group(simulation)
     start_remote_simulations(simulation)
     send(self(), :perform)
 
@@ -44,6 +45,10 @@ defmodule Storm.Simulation.SimulationServer do
   def handle_info(:cleanup, state) do
 
     {:noreply, state}
+  end
+
+  defp create_group(%{id: id}) do
+    :pg2.create(Fury.group(id))
   end
 
   defp start_remote_simulations(simulation) do

@@ -11,7 +11,7 @@ defmodule Storm.Fury do
   end
 
   @impl true
-  def start_clients(node, session_id, ids) do
-    :rpc.call(node, Fury.Session, :start_clients, [session_id, ids])
+  def start_clients(pid, session_id, ids) do
+    GenServer.call(pid, session_id, ids)
   end
 end
