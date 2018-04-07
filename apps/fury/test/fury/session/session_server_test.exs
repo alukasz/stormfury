@@ -1,10 +1,14 @@
 defmodule Fury.Session.SessionServerTest do
   use ExUnit.Case
 
+  import Mox
+
+  alias Fury.Client
   alias Fury.Session
   alias Fury.Simulation
   alias Fury.Session.SessionServer
   alias Fury.Session.SessionServer.State
+  alias Fury.Mock.Transport
 
   setup do
     session = %Session{
@@ -13,7 +17,9 @@ defmodule Fury.Session.SessionServerTest do
     }
     simulation = %Simulation{
       id: make_ref(),
-      sessions: [session]
+      sessions: [session],
+      protocol_mod: Fury.Protocol.Noop,
+      transport_mod: Fury.Mock.Transport
     }
     state = %State{
       id: session.id,
@@ -78,8 +84,43 @@ defmodule Fury.Session.SessionServerTest do
     end
   end
 
+  describe "handle_cast({:start_clients, ids}, state)" do
+    setup :start_config_server
+    setup :start_client_supervisor
+    setup :set_mox_global
+    setup do
+      stub Transport, :connect, fn _, _ -> {:error, :timeout} end
+
+      :ok
+    end
+
+    test "starts clients", %{state: state, simulation: %{id: id}} do
+      SessionServer.handle_call({:start_clients, [1, 2]}, :from, state)
+
+      clients =
+        id
+        |> Client.supervisor_name()
+        |> DynamicSupervisor.which_children()
+
+      assert length(clients) == 2
+    end
+
+    test "does not change state", %{state: state} do
+      msg = {:start_clients, [1, 2]}
+
+      assert SessionServer.handle_call(msg, :from, state) ==
+        {:reply, :ok, state}
+    end
+  end
+
   defp start_config_server(%{simulation: simulation}) do
     {:ok, _} = start_supervised({Fury.Simulation.ConfigServer, simulation})
+
+    :ok
+  end
+
+  defp start_client_supervisor(%{simulation: %{id: id}}) do
+    {:ok, _} = start_supervised({Fury.Client.ClientSupervisor, id})
 
     :ok
   end

@@ -131,7 +131,8 @@ defmodule Fury.Client.ClientServerTest do
       {:ok, state: %{state | transport: self()}}
     end
 
-    test "when request is found increases state.request", %{state: state} = context do
+    test "when request is found increases state.request",
+        %{state: state} = context do
       start_session_server(context, "think 10")
       expected_request_id = state.request + 1
 
