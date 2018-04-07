@@ -1,9 +1,13 @@
 defmodule Storm.Fury do
   @behaviour Storm.FuryBridge
 
+  @timeout :timer.seconds(5)
+
   @impl true
-  def start_sessions(node, simulation_id) do
-    :rpc.call(node, Fury, :start_sessions, [simulation_id])
+  def start_simulation(simulation) do
+    request = {:start_simulation, simulation}
+
+    GenServer.multi_call(Node.list(:known), Fury.Server, request, @timeout)
   end
 
   @impl true

@@ -1,13 +1,17 @@
 defmodule Storm.SimulationServerTest do
   use ExUnit.Case, async: true
 
+  import Mox
+
   alias Storm.Simulation.SimulationServer
   alias Storm.Simulation.SimulationServer.State
+  alias Storm.Mock.Fury
 
   setup do
     id = make_ref()
     simulation = %Db.Simulation{
       id: id,
+      duration: 0,
       sessions: [%Db.Session{id: make_ref(), simulation_id: id}]
     }
     state = %State{simulation: simulation}
@@ -15,22 +19,15 @@ defmodule Storm.SimulationServerTest do
     {:ok, state: state, simulation: simulation}
   end
 
-  describe "name/1" do
-    test "returns :via tuple for name registration" do
-      assert SimulationServer.name(:id) ==
-        {:via, Registry, {Storm.Simulation.Registry, :id}}
-    end
-  end
-
   describe "init/1" do
     test "initializes state", %{simulation: simulation, state: state} do
       assert SimulationServer.init(simulation) == {:ok, state}
     end
 
-    test "sends message to start slave nodes", %{simulation: simulation} do
+    test "sends message to start dependencies", %{simulation: simulation} do
       SimulationServer.init(simulation)
 
-      assert_receive :start_slaves
+      assert_receive :initialize
     end
   end
 
@@ -43,6 +40,36 @@ defmodule Storm.SimulationServerTest do
     test "increases number of clients started", %{state: state} do
       assert {_, _, %{clients_started: 10}} =
         SimulationServer.handle_call({:get_ids, 10}, :from, state)
+    end
+  end
+
+  describe "handle_info(:initialize, _)" do
+    setup do
+      stub Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
+
+      :ok
+    end
+
+    test "sends message to perform simulation", %{state: state} do
+      SimulationServer.handle_info(:initialize, state)
+
+      assert_receive :perform
+    end
+
+    test "starts remote simulations", %{state: state} do
+      expect Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
+
+      SimulationServer.handle_info(:initialize, state)
+
+      verify!()
+    end
+  end
+
+  describe "handle_info(:perform, _)" do
+    test "sends message to cleanup simulation", %{state: state} do
+      SimulationServer.handle_info(:perform, state)
+
+      assert_receive :cleanup
     end
   end
 end
