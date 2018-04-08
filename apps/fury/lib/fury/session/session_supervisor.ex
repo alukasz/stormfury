@@ -1,7 +1,6 @@
 defmodule Fury.Session.SessionSupervisor do
   use DynamicSupervisor
 
-  alias Fury.Session
   alias Fury.Session.SessionServer
 
   def start_link([simulation_id, sessions]) do

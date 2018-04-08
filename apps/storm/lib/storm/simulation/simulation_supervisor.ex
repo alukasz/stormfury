@@ -11,7 +11,7 @@ defmodule Storm.Simulation.SimulationSuperisor do
 
   def init(%{id: id, sessions: sessions} = simulation) do
     children = [
-      {LauncherSupervisor, [id, sessions]},
+      {LauncherSupervisor, sessions},
       {DispatcherServer, id},
       {SimulationServer, simulation},
     ]

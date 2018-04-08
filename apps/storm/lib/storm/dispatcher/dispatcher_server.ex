@@ -62,7 +62,7 @@ defmodule Storm.Dispatcher.DispatcherServer do
     |> :pg2.get_members()
   end
 
-  defp zip_with_clients([], clients) do
+  defp zip_with_clients([], _) do
     []
   end
   defp zip_with_clients(pids, clients) do

@@ -36,7 +36,7 @@ defmodule Storm.Launcher.LauncherServer do
     {:noreply, session}
   end
 
-  defp do_start_clients(session, 0), do: :ok
+  defp do_start_clients(_, 0), do: :ok
   defp do_start_clients(session, to_start) do
     %{id: session_id, simulation_id: simulation_id} = session
     ids = Simulation.get_ids(simulation_id, to_start)

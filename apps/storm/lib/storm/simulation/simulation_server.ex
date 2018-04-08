@@ -6,7 +6,7 @@ defmodule Storm.Simulation.SimulationServer do
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
-  def start_link(%Db.Simulation{id: id} = simulation) do
+  def start_link(%Db.Simulation{id: id}) do
     GenServer.start_link(__MODULE__, id, name: name(id))
   end
 

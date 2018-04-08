@@ -3,8 +3,8 @@ defmodule Storm.Launcher.LauncherSupervisor do
 
   alias Storm.Launcher.LauncherServer
 
-  def start_link([simulation_id, sessions]) do
-    {:ok, sup} = DynamicSupervisor.start_link(__MODULE__, simulation_id)
+  def start_link(sessions) do
+    {:ok, sup} = DynamicSupervisor.start_link(__MODULE__, [])
     start_launchers(sup, sessions)
 
     {:ok, sup}
@@ -17,7 +17,7 @@ defmodule Storm.Launcher.LauncherSupervisor do
     {:ok, pid}
   end
 
-  def init(simulation_id) do
+  def init(_) do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 

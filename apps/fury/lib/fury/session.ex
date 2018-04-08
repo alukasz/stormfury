@@ -1,6 +1,4 @@
 defmodule Fury.Session do
-  alias Fury.Session.SessionSupervisor
-
   defstruct [
     :id,
     :scenario,

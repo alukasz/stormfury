@@ -20,6 +20,8 @@ defmodule Storm.SimulationServerTest do
   describe "init/1" do
     setup %{simulation: simulation} do
       Db.Simulation.insert(simulation)
+
+      :ok
     end
 
     test "initializes state", %{simulation: %{id: id} = simulation} do
