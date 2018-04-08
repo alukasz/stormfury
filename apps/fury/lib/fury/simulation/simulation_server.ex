@@ -21,6 +21,12 @@ defmodule Fury.Simulation.SimulationServer do
 
     {:reply, :ok, state}
   end
+  def handle_call(:terminate, from, %{supervisor: supervisor} = state) do
+    spawn fn ->
+      SimulationsSupervisor.terminate_child(supervisor)
+    end
+    {:reply, :ok, state}
+  end
 
   defp name(id) do
     Simulation.name(id)

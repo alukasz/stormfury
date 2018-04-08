@@ -1,6 +1,5 @@
 defmodule Storm.Simulation do
   alias Storm.SimulationsSupervisor
-  alias Storm.Simulation.SimulationServer
 
   def start(%Db.Simulation{} = simulation) do
     SimulationsSupervisor.start_child(simulation)

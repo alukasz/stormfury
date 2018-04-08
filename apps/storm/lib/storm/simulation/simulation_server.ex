@@ -44,7 +44,8 @@ defmodule Storm.Simulation.SimulationServer do
 
     {:noreply, state}
   end
-  def handle_info(:cleanup, state) do
+  def handle_info(:cleanup, %{simulation: simulation} = state) do
+    stop_remote_simulations(simulation)
 
     {:noreply, state}
   end
@@ -53,10 +54,20 @@ defmodule Storm.Simulation.SimulationServer do
     :pg2.create(Fury.group(id))
   end
 
+  defp get_group_members(%{id: id}) do
+    :pg2.get_members(Fury.group(id))
+  end
+
   defp start_remote_simulations(simulation) do
     simulation
     |> translate_simulation()
     |> @fury_bridge.start_simulation()
+  end
+
+  defp stop_remote_simulations(simulation) do
+    simulation
+    |> get_group_members()
+    |> Enum.each(&GenServer.call(&1, :terminate))
   end
 
   defp translate_simulation(%{sessions: sessions} = simulation) do

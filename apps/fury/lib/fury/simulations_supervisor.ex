@@ -11,6 +11,10 @@ defmodule Fury.SimulationsSupervisor do
     DynamicSupervisor.start_child(__MODULE__, simulation_spec(simulation))
   end
 
+  def terminate_child(simulation_sup_pid) do
+    DynamicSupervisor.terminate_child(__MODULE__, simulation_sup_pid)
+  end
+
   def init(_) do
     DynamicSupervisor.init(strategy: :one_for_one)
   end

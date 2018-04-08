@@ -1,6 +1,4 @@
 defmodule Storm.Dispatcher do
-  alias Storm.Dispatcher.DispatcherServer
-
   def start_clients(simulation_id, session_id, ids) do
     clients =
       session_id
