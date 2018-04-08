@@ -9,7 +9,8 @@ defmodule Db.Simulation do
     :duration,
     :protocol_mod,
     :transport_mod,
-    sessions: []
+    sessions: [],
+    clients_started: 0
   ]
 
   def get(id) do
@@ -38,6 +39,10 @@ defmodule Db.Simulation do
     end
 
     Repo.transaction(transaction)
+  end
+
+  def update(%Simulation{id: id}, attrs) do
+    Repo.update(Simulation, id, attrs)
   end
 
   defp insert_sessions(sessions) do

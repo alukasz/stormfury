@@ -20,6 +20,10 @@ defmodule Db.Session do
     Repo.insert(session)
   end
 
+  def update(%Session{id: id}, attrs) do
+    Repo.update(Session, id, attrs)
+  end
+
   def get_by_simulation_id(simulation_id) do
     %Session{}
     |> Util.match_spec(:simulation_id, simulation_id)

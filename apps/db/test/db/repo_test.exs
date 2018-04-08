@@ -36,6 +36,23 @@ defmodule Db.RepoTest do
     end
   end
 
+  describe "update/3" do
+    test "updates record" do
+      insert_record(TestStruct.record(id: 42))
+
+      assert %TestStruct{id: 42, foo: "new_foo"} =
+        Repo.update(TestStruct, 42, foo: "new_foo")
+
+      assert get_record(TestStruct, 42) ==
+        TestStruct.record(id: 42, foo: "new_foo")
+    end
+
+    test "returns error tuple when record does not exist" do
+      assert {:error, :not_found} =
+        Repo.update(TestStruct, 42, foo: "new_foo")
+    end
+  end
+
   describe "match/1" do
     test "returns structs that matches" do
       insert_record(TestStruct.record(id: 1, foo: "no match"))

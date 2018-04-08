@@ -32,6 +32,27 @@ defmodule Db.Repo do
     end
   end
 
+  def update(table, id, attrs) do
+    operation = fn ->
+      with %_{} = struct <- get(table, id),
+           attrs = Enum.into(attrs, %{}),
+           struct = Map.merge(struct, attrs),
+           :ok <- insert(struct) do
+        struct
+      else
+        error -> error
+      end
+    end
+
+    case transaction(operation) do
+      %_{} = struct ->
+        struct
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
   def match(match_spec) do
     operation = fn -> :mnesia.match_object(match_spec) end
 

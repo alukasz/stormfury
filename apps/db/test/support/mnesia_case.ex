@@ -29,4 +29,11 @@ defmodule Db.MnesiaCase do
 
     match?({:atomic, [_]}, :mnesia.transaction(transaction))
   end
+
+  def get_record(table, id) do
+    transaction = fn -> :mnesia.read(table, id) end
+    {:atomic, [record]} = :mnesia.transaction(transaction)
+
+    record
+  end
 end

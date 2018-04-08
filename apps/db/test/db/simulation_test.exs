@@ -63,4 +63,20 @@ defmodule Db.SimulationsTest do
       refute Repo.get(Session, 11)
     end
   end
+
+  describe "update/2" do
+    test "updates simulation" do
+      Repo.insert(%Simulation{id: 42})
+
+      assert %Simulation{id: 42, clients_started: 10} =
+        Simulation.update(%Simulation{id: 42}, clients_started: 10)
+
+      assert %Simulation{id: 42, clients_started: 10} = Repo.get(Simulation, 42)
+    end
+
+    test "returns error tuple when record does not exist" do
+      assert {:error, :not_found} =
+        Simulation.update(%Simulation{id: 42}, clients_started: 10)
+    end
+  end
 end
