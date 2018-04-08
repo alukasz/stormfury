@@ -37,40 +37,57 @@ defmodule Storm.Dispatcher.DispatcherServer do
     schedule_start_clients()
     %{simulation_id: simulation_id, to_start: clients} = state
 
+    case get_remote_pids(simulation_id) do
+      [] ->
+        {:noreply, state}
+
+      pids ->
+        do_start_clients(pids, clients)
+
+        {:noreply, %{state | to_start: []}}
+    end
+  end
+
+  defp do_start_clients(pids, clients) do
+    pids
+    |> zip_with_clients(clients)
+    |> group_by_pid()
+    |> group_by_sessions()
+    |> call_remote_simulations()
+  end
+
+  defp get_remote_pids(simulation_id) do
     simulation_id
     |> Fury.group()
     |> :pg2.get_members()
-    |> zip_with_clients(clients)
-    |> group_by_node()
-    |> group_by_sessions()
-    |> do_start_clients()
-
-    {:noreply, %{state | to_start: []}}
   end
 
-  defp zip_with_clients(nodes, clients) do
-    nodes
+  defp zip_with_clients([], clients) do
+    []
+  end
+  defp zip_with_clients(pids, clients) do
+    pids
     |> Enum.shuffle()
     |> Stream.cycle()
     |> Enum.zip(clients)
     |> Enum.shuffle()
   end
 
-  defp group_by_node(clients) do
+  defp group_by_pid(clients) do
     Enum.group_by(clients, &elem(&1, 0), &elem(&1, 1))
   end
 
-  defp group_by_sessions(nodes) do
-    Enum.map nodes, fn {node, clients} ->
+  defp group_by_sessions(pids) do
+    Enum.map pids, fn {pid, clients} ->
       sessions = Enum.group_by(clients, &elem(&1, 0), &elem(&1, 1))
-      {node, sessions}
+      {pid, sessions}
     end
   end
 
-  defp do_start_clients(nodes) do
-    Enum.each nodes, fn {node, sessions} ->
+  defp call_remote_simulations(pids) do
+    Enum.each pids, fn {pid, sessions} ->
       Enum.each sessions, fn {session, clients} ->
-        @fury_bridge.start_clients(node, session, clients)
+        @fury_bridge.start_clients(pid, session, clients)
       end
     end
   end
