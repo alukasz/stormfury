@@ -6,13 +6,6 @@ defmodule Storm.Simulation.SimulationServer do
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
-  defmodule State do
-    defstruct [
-      simulation: nil,
-      clients_started: 0,
-    ]
-  end
-
   def start_link(%Db.Simulation{id: id} = simulation) do
     GenServer.start_link(__MODULE__, simulation, name: name(id))
   end
@@ -20,7 +13,7 @@ defmodule Storm.Simulation.SimulationServer do
   def init(simulation) do
     Process.send_after(self(), :initialize, 50)
 
-    {:ok, %State{simulation: simulation}}
+    {:ok, simulation}
   end
 
   def handle_call({:get_ids, number}, _, %{clients_started: started} = state) do
@@ -30,22 +23,22 @@ defmodule Storm.Simulation.SimulationServer do
     {:reply, range, %{state | clients_started: new_started}}
   end
 
-  def handle_info(:initialize, %{simulation: simulation} = state) do
-    create_group(simulation)
-    start_remote_simulations(simulation)
+  def handle_info(:initialize, state) do
+    create_group(state)
+    start_remote_simulations(state)
     send(self(), :perform)
 
     {:noreply, state}
   end
-  def handle_info(:perform, %{simulation: simulation} = state) do
-    timeout = :timer.seconds(simulation.duration)
+  def handle_info(:perform, %{duration: duration} = state) do
+    timeout = :timer.seconds(duration)
     Process.send_after(self(), :cleanup, timeout)
-    turn_launchers(simulation)
+    turn_launchers(state)
 
     {:noreply, state}
   end
-  def handle_info(:cleanup, %{simulation: simulation} = state) do
-    stop_remote_simulations(simulation)
+  def handle_info(:cleanup, state) do
+    stop_remote_simulations(state)
 
     {:noreply, state}
   end
@@ -62,6 +55,25 @@ defmodule Storm.Simulation.SimulationServer do
     simulation
     |> translate_simulation()
     |> @fury_bridge.start_simulation()
+    |> report_failed_nodes()
+  end
+
+  defp report_failed_nodes({success, failed}) do
+    success
+    |> Enum.map(fn
+      {node, {:error, _}} -> node
+      _ -> nil
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> :ok
+      nodes -> IO.inspect("failed to start simulations on nodes #{inspect nodes}")
+    end
+
+    case failed do
+      [] -> :ok
+      nodes -> IO.inspect("failed to call nodes #{inspect nodes}")
+    end
   end
 
   defp stop_remote_simulations(simulation) do

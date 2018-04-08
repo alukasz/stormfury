@@ -4,7 +4,6 @@ defmodule Storm.SimulationServerTest do
   import Mox
 
   alias Storm.Simulation.SimulationServer
-  alias Storm.Simulation.SimulationServer.State
   alias Storm.Mock
 
   setup do
@@ -14,14 +13,13 @@ defmodule Storm.SimulationServerTest do
       duration: 0,
       sessions: [%Db.Session{id: make_ref(), simulation_id: id}]
     }
-    state = %State{simulation: simulation}
 
-    {:ok, state: state, simulation: simulation}
+    {:ok, simulation: simulation}
   end
 
   describe "init/1" do
-    test "initializes state", %{simulation: simulation, state: state} do
-      assert SimulationServer.init(simulation) == {:ok, state}
+    test "initializes state", %{simulation: simulation} do
+      assert SimulationServer.init(simulation) == {:ok, simulation}
     end
 
     test "sends message to start dependencies", %{simulation: simulation} do
@@ -32,14 +30,14 @@ defmodule Storm.SimulationServerTest do
   end
 
   describe "handle_call({:get_ids, number}, _, _)" do
-    test "replies with range of clients ids to start", %{state: state} do
+    test "replies with range of clients ids to start", %{simulation: simulation} do
       assert {:reply, 1..10, _} =
-        SimulationServer.handle_call({:get_ids, 10}, :from, state)
+        SimulationServer.handle_call({:get_ids, 10}, :from, simulation)
     end
 
-    test "increases number of clients started", %{state: state} do
+    test "increases number of clients started", %{simulation: simulation} do
       assert {_, _, %{clients_started: 10}} =
-        SimulationServer.handle_call({:get_ids, 10}, :from, state)
+        SimulationServer.handle_call({:get_ids, 10}, :from, simulation)
     end
   end
 
@@ -50,22 +48,22 @@ defmodule Storm.SimulationServerTest do
       :ok
     end
 
-    test "sends message to perform simulation", %{state: state} do
-      SimulationServer.handle_info(:initialize, state)
+    test "sends message to perform simulation", %{simulation: simulation} do
+      SimulationServer.handle_info(:initialize, simulation)
 
       assert_receive :perform
     end
 
-    test "creates pg2 group for remote simulations", %{state: state} do
-      SimulationServer.handle_info(:initialize, state)
+    test "creates pg2 group for remote simulations", %{simulation: simulation} do
+      SimulationServer.handle_info(:initialize, simulation)
 
-      assert Fury.group(state.simulation.id) in :pg2.which_groups()
+      assert Fury.group(simulation.id) in :pg2.which_groups()
     end
 
-    test "starts remote simulations", %{state: state} do
+    test "starts remote simulations", %{simulation: simulation} do
       expect Mock.Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
 
-      SimulationServer.handle_info(:initialize, state)
+      SimulationServer.handle_info(:initialize, simulation)
 
       verify!()
     end
@@ -78,17 +76,17 @@ defmodule Storm.SimulationServerTest do
       :ok
     end
 
-    test "sends message to cleanup simulation", %{state: state} do
+    test "sends message to cleanup simulation", %{simulation: simulation} do
       spawn fn ->
-        SimulationServer.handle_info(:perform, state)
+        SimulationServer.handle_info(:perform, simulation)
 
         assert_receive :cleanup
       end
     end
 
-    test "turns on LauncherServer", %{state: state} do
+    test "turns on LauncherServer", %{simulation: simulation} do
       spawn fn ->
-        SimulationServer.handle_info(:perform, state)
+        SimulationServer.handle_info(:perform, simulation)
       end
 
       assert_receive {:"$gen_call", _, :perform}
