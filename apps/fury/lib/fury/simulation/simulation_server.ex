@@ -1,23 +1,10 @@
 defmodule Fury.Simulation.SimulationServer do
-  use GenServer
+  use GenServer, restart: :transient
 
   alias Fury.Session
   alias Fury.Simulation
   alias Fury.Simulation.Config
-
-  defmodule State do
-    defstruct [
-      :id,
-      :simulation
-    ]
-
-    def new(id) do
-      %State{
-        id: id,
-        simulation: Config.simulation(id)
-      }
-    end
-  end
+  alias Fury.SimulationsSupervisor
 
   def start_link(id) do
     GenServer.start_link(__MODULE__, id, name: name(id))
@@ -26,7 +13,7 @@ defmodule Fury.Simulation.SimulationServer do
   def init(id) do
     :pg2.join(Fury.group(id), self())
 
-    {:ok, State.new(id)}
+    {:ok, Config.simulation(id)}
   end
 
   def handle_call({:start_clients, session_id, ids}, _, state) do

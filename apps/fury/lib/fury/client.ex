@@ -3,10 +3,14 @@ defmodule Fury.Client do
 
   defstruct [
     :id,
+    :session_id,
+    :simulation_id,
     :url,
     :transport_mod,
     :protocol_mod,
     :protocol_state,
+    request: 0,
+    transport: :not_connected
   ]
 
   def start(simulation_id, session_id, id) do

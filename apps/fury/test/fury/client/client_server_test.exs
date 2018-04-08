@@ -3,10 +3,10 @@ defmodule Fury.Client.ClientServerTest do
 
   import Mox
 
+  alias Fury.Client
   alias Fury.Session
   alias Fury.Simulation
   alias Fury.Client.ClientServer
-  alias Fury.Client.ClientServer.State
   alias Fury.Session.SessionServer
   alias Fury.Mock.{Protocol, Transport}
 
@@ -227,7 +227,7 @@ defmodule Fury.Client.ClientServerTest do
       transport_mod: Transport,
       protocol_mod: Protocol,
     }
-    state = %State{
+    state = %Client{
       id: :id,
       session_id: session.id,
       simulation_id: simulation.id,

@@ -8,6 +8,7 @@ defmodule Fury.Simulation do
     :duration,
     :protocol_mod,
     :transport_mod,
+    :supervisor,
     sessions: []
   ]
 

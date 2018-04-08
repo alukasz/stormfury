@@ -3,7 +3,9 @@ defmodule Fury.Session do
 
   defstruct [
     :id,
-    :scenario
+    :scenario,
+    :simulation_id,
+    requests: []
   ]
 
   def get_request(session_id, id) do

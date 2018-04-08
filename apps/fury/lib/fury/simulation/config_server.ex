@@ -1,6 +1,7 @@
 defmodule Fury.Simulation.ConfigServer do
   use GenServer
 
+  alias Fury.Client
   alias Fury.Session
   alias Fury.Simulation
   alias Fury.Simulation.Config
@@ -28,7 +29,7 @@ defmodule Fury.Simulation.ConfigServer do
   end
 
   def handle_call(:client, _from, simulation) do
-    client = %{
+    client = %Client{
       url: simulation.url,
       transport_mod: simulation.transport_mod,
       protocol_mod: simulation.protocol_mod

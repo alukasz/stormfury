@@ -1,6 +1,7 @@
 defmodule Fury.Simulation.ConfigTest do
   use ExUnit.Case, async: true
 
+  alias Fury.Client
   alias Fury.Session
   alias Fury.Simulation
   alias Fury.Simulation.Config
@@ -44,7 +45,7 @@ defmodule Fury.Simulation.ConfigTest do
 
   describe "client/1" do
     test "returns Client config", %{simulation: simulation} do
-      assert Config.client(simulation.id) == %{
+      assert Config.client(simulation.id) == %Client{
         url: "localhost",
         transport_mod: Transport,
         protocol_mod: Protocol,

@@ -4,7 +4,6 @@ defmodule Fury.Simulation.SimulationServerTest do
   alias Fury.Simulation
   alias Fury.Simulation.ConfigServer
   alias Fury.Simulation.SimulationServer
-  alias Fury.Simulation.SimulationServer.State
 
   setup do
     simulation = %Simulation{id: make_ref()}
@@ -26,9 +25,7 @@ defmodule Fury.Simulation.SimulationServerTest do
     setup :start_config_server
 
     test "initializes state", %{simulation: %{id: id} = simulation} do
-      state = %State{id: id, simulation: simulation}
-
-      assert SimulationServer.init(id) == {:ok, state}
+      assert SimulationServer.init(id) == {:ok, simulation}
     end
   end
 

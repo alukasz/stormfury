@@ -5,32 +5,15 @@ defmodule Fury.Session.SessionServer do
   alias Fury.Session
   alias Fury.Simulation.Config
 
-  defmodule State do
-    defstruct [
-      :id,
-      :simulation_id,
-      :session,
-      requests: []
-    ]
-
-    def new([simulation_id, session_id]) do
-      %State{
-        id: session_id,
-        simulation_id: simulation_id,
-        session: Config.session(simulation_id, session_id),
-      }
-    end
-  end
-
   def start_link(simulation_id, session_id) do
     opts = [simulation_id, session_id]
 
     GenServer.start_link(__MODULE__, opts, name: name(session_id))
   end
 
-  def init(opts) do
+  def init([simulation_id, session_id]) do
     send(self(), :parse_scenario)
-    {:ok, State.new(opts)}
+    {:ok, Config.session(simulation_id, session_id)}
   end
 
   def handle_call({:get_request, id}, _, %{requests: requests} = state) do
@@ -45,7 +28,7 @@ defmodule Fury.Session.SessionServer do
     {:reply, :ok, state}
   end
 
-  def handle_info(:parse_scenario, %{session: %{scenario: scenario}} = state) do
+  def handle_info(:parse_scenario, %{scenario: scenario} = state) do
     {:ok, requests} = Storm.DSL.parse(scenario)
 
     {:noreply, %{state | requests: requests ++ [:done]}}

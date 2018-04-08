@@ -10,12 +10,14 @@ defmodule Fury.SessionTest do
   alias Fury.Mock.Transport
 
   setup do
+    simulation_id = make_ref()
     session = %Session{
       id: make_ref(),
-      scenario: "think 10"
+      scenario: "think 10",
+      simulation_id: simulation_id
     }
     simulation = %Simulation{
-      id: make_ref(),
+      id: simulation_id,
       sessions: [session],
       protocol_mod: Fury.Protocol.Noop,
       transport_mod: Fury.Mock.Transport

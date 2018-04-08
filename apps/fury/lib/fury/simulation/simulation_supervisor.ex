@@ -1,5 +1,5 @@
 defmodule Fury.Simulation.SimulationSuperisor do
-  use Supervisor
+  use Supervisor, restart: :transient
 
   alias Fury.Simulation
 
@@ -9,7 +9,7 @@ defmodule Fury.Simulation.SimulationSuperisor do
 
   def init(%Simulation{id: id, sessions: sessions} = simulation) do
     children = [
-      {Fury.Simulation.ConfigServer, simulation},
+      {Fury.Simulation.ConfigServer, %{simulation | supervisor: self()}},
       {Fury.Simulation.SimulationServer, id},
       {Fury.Session.SessionSupervisor, [id, sessions]},
       {Fury.Client.ClientSupervisor, id}

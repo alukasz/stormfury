@@ -6,40 +6,19 @@ defmodule Fury.Client.ClientServer do
   alias Fury.Simulation.Config
   alias Storm.DSL.Util
 
-  defmodule State do
-    defstruct [
-      :id,
-      :session_id,
-      :simulation_id,
-      :url,
-      :transport_mod,
-      :protocol_mod,
-      :protocol_state,
-      request: 0,
-      transport: :not_connected
-    ]
-
-    def new([simulation_id, session_id, id]) do
-      config = Config.client(simulation_id)
-      state = %State{
-        id: id,
-        session_id: session_id,
-        simulation_id: simulation_id,
-        protocol_state: config.protocol_mod.init()
-      }
-
-      Map.merge(state, config)
-    end
-  end
-
   def start_link(simulation_id, opts) do
     GenServer.start_link(__MODULE__, [simulation_id | opts])
   end
 
-  def init(opts) do
+  def init([simulation_id, session_id, id]) do
+    state = Config.client(simulation_id)
+    state = %{state | id: id,
+              session_id: session_id,
+              simulation_id: simulation_id,
+              protocol_state: state.protocol_mod.init()}
     connect()
 
-    {:ok, State.new(opts)}
+    {:ok, state}
   end
 
   def handle_info(:connect, state) do
