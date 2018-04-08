@@ -18,18 +18,34 @@ defmodule Storm.SimulationServerTest do
   end
 
   describe "init/1" do
-    test "initializes state", %{simulation: simulation} do
-      assert SimulationServer.init(simulation) == {:ok, simulation}
+    setup %{simulation: simulation} do
+      Db.Simulation.insert(simulation)
     end
 
-    test "sends message to start dependencies", %{simulation: simulation} do
-      SimulationServer.init(simulation)
+    test "initializes state", %{simulation: %{id: id} = simulation} do
+      assert SimulationServer.init(id) == {:ok, simulation}
+    end
+
+    test "restores state from Db", %{simulation: %{id: id} = simulation} do
+      Db.Simulation.update(simulation, clients_started: 20)
+
+      assert {:ok, %{clients_started: 20}} = SimulationServer.init(id)
+    end
+
+    test "sends message to start dependencies", %{simulation: %{id: id}} do
+      SimulationServer.init(id)
 
       assert_receive :initialize
     end
   end
 
   describe "handle_call({:get_ids, number}, _, _)" do
+    setup %{simulation: simulation} do
+      Db.Repo.insert(simulation)
+
+      :ok
+    end
+
     test "replies with range of clients ids to start", %{simulation: simulation} do
       assert {:reply, 1..10, _} =
         SimulationServer.handle_call({:get_ids, 10}, :from, simulation)
@@ -38,6 +54,12 @@ defmodule Storm.SimulationServerTest do
     test "increases number of clients started", %{simulation: simulation} do
       assert {_, _, %{clients_started: 10}} =
         SimulationServer.handle_call({:get_ids, 10}, :from, simulation)
+    end
+
+    test "updates Db.Simulation", %{simulation: simulation} do
+      SimulationServer.handle_call({:get_ids, 10}, :from, simulation)
+
+      assert %{clients_started: 10} = Db.Repo.get(Db.Simulation, simulation.id)
     end
   end
 

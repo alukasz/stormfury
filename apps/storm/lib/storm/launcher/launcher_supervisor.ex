@@ -18,10 +18,7 @@ defmodule Storm.Launcher.LauncherSupervisor do
   end
 
   def init(simulation_id) do
-    DynamicSupervisor.init(
-      strategy: :one_for_one,
-      extra_arguments: [simulation_id]
-    )
+    DynamicSupervisor.init(strategy: :one_for_one)
   end
 
   defp start_launchers(pid, sessions) do

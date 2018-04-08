@@ -5,41 +5,23 @@ defmodule Storm.Launcher.LauncherServer do
   alias Storm.Launcher
   alias Storm.Simulation
 
-  defmodule State do
-    defstruct [
-      :simulation_id,
-      :session
-    ]
-
-    def new([simulation_id, session_id]) do
-      %State{
-        simulation_id: simulation_id,
-        session: Db.Session.get(session_id)
-      }
-    end
+  def start_link(session_id) do
+    GenServer.start_link(__MODULE__, session_id, name: name(session_id))
   end
 
-  def start_link(simulation_id, session_id) do
-    opts = [simulation_id, session_id]
-
-    GenServer.start_link(__MODULE__, opts, name: name(session_id))
+  def init(session_id) do
+    {:ok, Db.Session.get(session_id)}
   end
 
-  def init(opts) do
-    {:ok, State.new(opts)}
-  end
-
-  def handle_call(:perform, _from, state) do
+  def handle_call(:perform, _from, session) do
     schedule_start_clients()
 
-    {:reply, :ok, state}
+    {:reply, :ok, session}
   end
 
-  def handle_info(:start_clients, state) do
+  def handle_info(:start_clients, session) do
     schedule_start_clients()
 
-    %{simulation_id: simulation_id,
-      session: %{id: session_id} = session} = state
     %{clients: clients, arrival_rate: arrival_rate,
       clients_started: started} = session
 
@@ -48,19 +30,18 @@ defmodule Storm.Launcher.LauncherServer do
       started + arrival_rate < clients -> arrival_rate
       true -> clients - started
     end
-    do_start_clients(simulation_id, session_id, to_start)
+    do_start_clients(session, to_start)
+    session = Db.Session.update(session, clients_started: started + to_start)
 
-    session = %{session | clients_started: started + to_start}
-
-    {:noreply, %{state | session: session}}
+    {:noreply, session}
   end
 
-  defp do_start_clients(_, _, 0), do: :ok
-  defp do_start_clients(simulation_id, session_id, to_start) do
+  defp do_start_clients(session, 0), do: :ok
+  defp do_start_clients(session, to_start) do
+    %{id: session_id, simulation_id: simulation_id} = session
     ids = Simulation.get_ids(simulation_id, to_start)
     :ok = Dispatcher.start_clients(simulation_id, session_id, ids)
   end
-
 
   defp schedule_start_clients do
     Process.send_after(self(), :start_clients, :timer.seconds(1))

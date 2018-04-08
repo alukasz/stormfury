@@ -7,8 +7,7 @@ defmodule Storm.LauncherTest do
   describe "perform/1" do
     setup do
       id = make_ref()
-      opts = [start: {LauncherServer, :start_link, [:id, id]}]
-      {:ok, _} = start_supervised(LauncherServer, opts)
+      {:ok, _} = start_supervised({LauncherServer, id})
 
       {:ok, session_id: id}
     end

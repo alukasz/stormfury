@@ -43,6 +43,7 @@ defmodule Storm.SimulationTest do
 
   defp start_server(%{simulation: simulation}) do
     stub Fury, :start_simulation, fn _ -> {[], []} end
+    :ok = Db.Repo.insert(simulation)
     {:ok, _} = start_supervised({SimulationServer, simulation})
 
     :ok

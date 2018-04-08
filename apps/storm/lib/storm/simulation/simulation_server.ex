@@ -7,40 +7,41 @@ defmodule Storm.Simulation.SimulationServer do
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
   def start_link(%Db.Simulation{id: id} = simulation) do
-    GenServer.start_link(__MODULE__, simulation, name: name(id))
+    GenServer.start_link(__MODULE__, id, name: name(id))
   end
 
-  def init(simulation) do
+  def init(id) do
     Process.send_after(self(), :initialize, 50)
 
-    {:ok, simulation}
+    {:ok, Db.Simulation.get(id)}
   end
 
-  def handle_call({:get_ids, number}, _, %{clients_started: started} = state) do
+  def handle_call({:get_ids, number}, _, %{clients_started: started} = simulation) do
     new_started = started + number
     range = (started + 1)..new_started
+    simulation = Db.Simulation.update(simulation, clients_started: new_started)
 
-    {:reply, range, %{state | clients_started: new_started}}
+    {:reply, range, simulation}
   end
 
-  def handle_info(:initialize, state) do
-    create_group(state)
-    start_remote_simulations(state)
+  def handle_info(:initialize, simulation) do
+    create_group(simulation)
+    start_remote_simulations(simulation)
     send(self(), :perform)
 
-    {:noreply, state}
+    {:noreply, simulation}
   end
-  def handle_info(:perform, %{duration: duration} = state) do
+  def handle_info(:perform, %{duration: duration} = simulation) do
     timeout = :timer.seconds(duration)
     Process.send_after(self(), :cleanup, timeout)
-    turn_launchers(state)
+    turn_launchers(simulation)
 
-    {:noreply, state}
+    {:noreply, simulation}
   end
-  def handle_info(:cleanup, state) do
-    stop_remote_simulations(state)
+  def handle_info(:cleanup, simulation) do
+    stop_remote_simulations(simulation)
 
-    {:noreply, state}
+    {:noreply, simulation}
   end
 
   defp create_group(%{id: id}) do
