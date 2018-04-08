@@ -2,6 +2,7 @@ defmodule Storm.Simulation.SimulationServer do
   use GenServer
 
   alias Storm.Simulation
+  alias Storm.Launcher
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
@@ -36,9 +37,10 @@ defmodule Storm.Simulation.SimulationServer do
 
     {:noreply, state}
   end
-  def handle_info(:perform, state) do
-    timeout = :timer.seconds(state.simulation.duration)
+  def handle_info(:perform, %{simulation: simulation} = state) do
+    timeout = :timer.seconds(simulation.duration)
     Process.send_after(self(), :cleanup, timeout)
+    turn_launchers(simulation)
 
     {:noreply, state}
   end
@@ -57,9 +59,19 @@ defmodule Storm.Simulation.SimulationServer do
     |> @fury_bridge.start_simulation()
   end
 
-  defp translate_simulation(simulation) do
+  defp translate_simulation(%{sessions: sessions} = simulation) do
     data = Map.from_struct(simulation)
-    struct(Fury.Simulation, data)
+    simulation = struct(Fury.Simulation, data)
+    %{simulation | sessions: Enum.map(sessions, &translate_session/1)}
+  end
+
+  defp translate_session(session) do
+    data = Map.from_struct(session)
+    struct(Fury.Session, data)
+  end
+
+  defp turn_launchers(%{sessions: sessions}) do
+    Enum.each(sessions, &Launcher.perform(&1.id))
   end
 
   defp name(id) do

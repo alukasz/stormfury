@@ -72,10 +72,26 @@ defmodule Storm.SimulationServerTest do
   end
 
   describe "handle_info(:perform, _)" do
-    test "sends message to cleanup simulation", %{state: state} do
-      SimulationServer.handle_info(:perform, state)
+    setup %{simulation: %{sessions: [%{id: id}]}} do
+      Registry.register(Storm.Registry.Launcher, id, nil)
 
-      assert_receive :cleanup
+      :ok
+    end
+
+    test "sends message to cleanup simulation", %{state: state} do
+      spawn fn ->
+        SimulationServer.handle_info(:perform, state)
+
+        assert_receive :cleanup
+      end
+    end
+
+    test "turns on LauncherServer", %{state: state} do
+      spawn fn ->
+        SimulationServer.handle_info(:perform, state)
+      end
+
+      assert_receive {:"$gen_call", _, :perform}
     end
   end
 end

@@ -51,7 +51,7 @@ defmodule Fury.Session.SessionServerTest do
     end
 
     test "sends message to parse scenario",
-      %{simulation: %{id: simulation_id}, session: %{id: session_id} } do
+      %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
 
       SessionServer.init([simulation_id, session_id])
 

@@ -12,6 +12,6 @@ defmodule Storm.Fury do
 
   @impl true
   def start_clients(pid, session_id, ids) do
-    GenServer.call(pid, session_id, ids)
+    GenServer.call(pid, {:start_clients, session_id, ids})
   end
 end

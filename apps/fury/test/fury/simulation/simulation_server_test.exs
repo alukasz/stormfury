@@ -32,6 +32,26 @@ defmodule Fury.Simulation.SimulationServerTest do
     end
   end
 
+  describe "handle_call({:start_clients, session_id, ids}, _, _)" do
+    setup do
+      session_id = make_ref()
+      Registry.register(Fury.Registry.Session, session_id, nil)
+
+      {:ok, session_id: session_id}
+    end
+
+    test "starts clients in session", %{session_id: session_id} do
+      ids = [1, 2, 3]
+      request = {:start_clients, session_id, ids}
+
+      spawn fn ->
+        SimulationServer.handle_call(request, :from, :state)
+      end
+
+      assert_receive {:"$gen_call", _, {:start_clients, ^ids}}
+    end
+  end
+
   defp start_config_server(%{simulation: simulation}) do
     {:ok, _} = start_supervised({ConfigServer, simulation})
 

@@ -24,9 +24,9 @@ defmodule Storm.Launcher.LauncherServerTest do
     {:ok, session: session, state: state, simulation_id: state.simulation_id}
   end
 
-  describe "start_link/1" do
+  describe "start_link/2" do
     test "starts new LauncherServer", %{session: %{id: session_id}} do
-      assert {:ok, pid} = LauncherServer.start_link([:id, session_id])
+      assert {:ok, pid} = LauncherServer.start_link(:id, session_id)
       assert is_pid(pid)
     end
   end
