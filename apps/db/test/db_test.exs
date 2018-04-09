@@ -1,8 +1,9 @@
 defmodule DbTest do
   use ExUnit.Case
-  doctest Db
 
-  test "greets the world" do
-    assert Db.hello() == :world
+  describe "created?" do
+    test "checks if all tables are created" do
+      assert Db.created?()
+    end
   end
 end

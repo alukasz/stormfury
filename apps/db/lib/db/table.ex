@@ -6,4 +6,8 @@ defmodule Db.Table do
 
     :mnesia.create_table(mod, opts)
   end
+
+  def exists?(table) do
+    table in :mnesia.system_info(:tables)
+  end
 end

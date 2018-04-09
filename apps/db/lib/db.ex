@@ -3,16 +3,14 @@ defmodule Db do
   Documentation for Db.
   """
 
-  @doc """
-  Hello world.
+  alias Db.Table
 
-  ## Examples
+  @tables [
+    Db.Simulation,
+    Db.Session
+  ]
 
-      iex> Db.hello
-      :world
-
-  """
-  def hello do
-    :world
+  def created? do
+    Enum.all?(@tables, &Table.exists?/1)
   end
 end
