@@ -6,11 +6,15 @@ defmodule Fury.Simulation.SimulationServer do
   alias Fury.Simulation.Config
   alias Fury.SimulationsSupervisor
 
+  require Logger
+
   def start_link(id) do
     GenServer.start_link(__MODULE__, id, name: name(id))
   end
 
   def init(id) do
+    Logger.metadata(simulation: id)
+    Logger.info("Starting simulation")
     :pg2.join(Fury.group(id), self())
 
     {:ok, Config.simulation(id)}
@@ -22,6 +26,7 @@ defmodule Fury.Simulation.SimulationServer do
     {:reply, :ok, state}
   end
   def handle_call(:terminate, _, %{supervisor: supervisor} = state) do
+    Logger.info("Terminating simulation")
     spawn fn ->
       SimulationsSupervisor.terminate_child(supervisor)
     end

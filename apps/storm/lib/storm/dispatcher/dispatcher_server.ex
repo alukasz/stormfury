@@ -3,6 +3,8 @@ defmodule Storm.Dispatcher.DispatcherServer do
 
   alias Storm.Dispatcher
 
+  require Logger
+
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
   defmodule State do
@@ -17,6 +19,7 @@ defmodule Storm.Dispatcher.DispatcherServer do
   end
 
   def init(simulation_id) do
+    Logger.metadata(simulation: simulation_id)
     schedule_start_clients()
 
     {:ok, %State{simulation_id: simulation_id}}
@@ -39,6 +42,7 @@ defmodule Storm.Dispatcher.DispatcherServer do
 
     case get_remote_pids(simulation_id) do
       [] ->
+        Logger.warn("No remote simulations running, #{length(clients)} clients to dispatch")
         {:noreply, state}
 
       pids ->
@@ -49,6 +53,8 @@ defmodule Storm.Dispatcher.DispatcherServer do
   end
 
   defp do_start_clients(pids, clients) do
+    Logger.debug("Dispatching #{length(clients)} clients between #{length(pids)} nodes")
+
     pids
     |> zip_with_clients(clients)
     |> group_by_pid()

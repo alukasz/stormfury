@@ -5,6 +5,8 @@ defmodule Fury.Session.SessionServer do
   alias Fury.Session
   alias Fury.Simulation.Config
 
+  require Logger
+
   def start_link(simulation_id, session_id) do
     opts = [simulation_id, session_id]
 
@@ -12,6 +14,9 @@ defmodule Fury.Session.SessionServer do
   end
 
   def init([simulation_id, session_id]) do
+    Logger.metadata(simulation: simulation_id)
+    Logger.info("Starting session #{inspect session_id}")
+
     send(self(), :parse_scenario)
     {:ok, Config.session(simulation_id, session_id)}
   end
@@ -23,6 +28,7 @@ defmodule Fury.Session.SessionServer do
   end
   def handle_call({:start_clients, ids}, _from, state) do
     %{id: session_id, simulation_id: simulation_id} = state
+    Logger.debug("Starting #{length(ids)} clients for #{inspect session_id}")
     start_clients(simulation_id, session_id, ids)
 
     {:reply, :ok, state}

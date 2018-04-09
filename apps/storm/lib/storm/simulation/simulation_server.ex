@@ -4,6 +4,8 @@ defmodule Storm.Simulation.SimulationServer do
   alias Storm.Simulation
   alias Storm.Launcher
 
+  require Logger
+
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
   def start_link(%Db.Simulation{id: id}) do
@@ -11,6 +13,8 @@ defmodule Storm.Simulation.SimulationServer do
   end
 
   def init(id) do
+    Logger.metadata(simulation: id)
+    Logger.info("Initializing simulation")
     Process.send_after(self(), :initialize, 50)
 
     {:ok, Db.Simulation.get(id)}
@@ -32,6 +36,7 @@ defmodule Storm.Simulation.SimulationServer do
     {:noreply, simulation}
   end
   def handle_info(:perform, %{duration: duration} = simulation) do
+    Logger.info("Starting simulation")
     timeout = :timer.seconds(duration)
     Process.send_after(self(), :cleanup, timeout)
     turn_launchers(simulation)
@@ -39,6 +44,7 @@ defmodule Storm.Simulation.SimulationServer do
     {:noreply, simulation}
   end
   def handle_info(:cleanup, simulation) do
+    Logger.info("Simulation finished, terminating")
     stop_remote_simulations(simulation)
 
     {:noreply, simulation}
@@ -60,27 +66,27 @@ defmodule Storm.Simulation.SimulationServer do
   end
 
   defp report_failed_nodes({success, failed}) do
-    success
-    |> Enum.map(fn
-      {node, {:error, _}} -> node
-      _ -> nil
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> case do
-      [] -> :ok
-      nodes -> IO.inspect("failed to start simulations on nodes #{inspect nodes}")
+    Enum.each success, fn
+      {node, {:error, reason}} ->
+        Logger.error("Failed to start simulation on node #{inspect node}, reason: #{inspect reason}")
+
+      _ ->
+        :ok
     end
 
     case failed do
-      [] -> :ok
-      nodes -> IO.inspect("failed to call nodes #{inspect nodes}")
+      [] ->
+        :ok
+
+      nodes ->
+        Logger.error("Failed to start simulations on nodes #{inspect nodes}")
     end
   end
 
   defp stop_remote_simulations(simulation) do
     simulation
     |> get_group_members()
-    |> Enum.each(&GenServer.call(&1, :terminate))
+    |> Enum.map(&GenServer.call(&1, :terminate))
   end
 
   defp translate_simulation(%{sessions: sessions} = simulation) do
