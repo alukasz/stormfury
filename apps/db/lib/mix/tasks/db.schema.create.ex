@@ -4,6 +4,8 @@ defmodule Mix.Tasks.Db.Schema.Create do
   alias Db.Table
 
   def run(_args) do
+    Mix.shell.info("Creating mnesia schema on #{node()}")
+
     with :ok <- create_schema(),
          :ok <- :mnesia.start(),
          {:atomic, :ok} <- create_table(Db.Simulation),
