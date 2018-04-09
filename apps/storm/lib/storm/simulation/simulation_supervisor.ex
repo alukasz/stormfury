@@ -6,7 +6,7 @@ defmodule Storm.Simulation.SimulationSuperisor do
   alias Storm.Launcher.LauncherSupervisor
 
   def start_link(%Db.Simulation{} = simulation) do
-    Supervisor.start_link(__MODULE__, simulation)
+    Supervisor.start_link(__MODULE__, simulation, name: name(simulation))
   end
 
   def init(%{id: id, sessions: sessions} = simulation) do
@@ -17,5 +17,9 @@ defmodule Storm.Simulation.SimulationSuperisor do
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
+  end
+
+  def name(%{id: id}) do
+    {:via, Registry, {Storm.Registry.SimulationSupervisor, id}}
   end
 end

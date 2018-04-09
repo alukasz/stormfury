@@ -46,6 +46,7 @@ defmodule Storm.Simulation.SimulationServer do
   def handle_info(:cleanup, simulation) do
     Logger.info("Simulation finished, terminating")
     stop_remote_simulations(simulation)
+    stop_simulation(simulation)
 
     {:noreply, simulation}
   end
@@ -87,6 +88,10 @@ defmodule Storm.Simulation.SimulationServer do
     simulation
     |> get_group_members()
     |> Enum.map(&GenServer.call(&1, :terminate))
+  end
+
+  defp stop_simulation(simulation) do
+    Simulation.terminate(simulation)
   end
 
   defp translate_simulation(%{sessions: sessions} = simulation) do

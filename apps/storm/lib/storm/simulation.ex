@@ -5,6 +5,10 @@ defmodule Storm.Simulation do
     SimulationsSupervisor.start_child(simulation)
   end
 
+  def terminate(%Db.Simulation{} = simulation) do
+    SimulationsSupervisor.terminate_child(simulation)
+  end
+
   def get_ids(id, number) do
     GenServer.call(name(id), {:get_ids, number})
   end

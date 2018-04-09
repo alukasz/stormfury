@@ -5,6 +5,7 @@ defmodule Storm.SimulationTest do
 
   alias Storm.Simulation
   alias Storm.Simulation.SimulationServer
+  alias Storm.SimulationsSupervisor
   alias Storm.Mock.Fury
 
   setup do
@@ -21,6 +22,21 @@ defmodule Storm.SimulationTest do
 
       assert {:ok, _} = Simulation.start(simulation)
       assert [_] = Registry.lookup(Storm.Registry.Simulation, simulation.id)
+    end
+  end
+
+  describe "terminate/1" do
+    setup :set_mox_global
+    setup %{simulation: simulation} do
+      stub Fury, :start_simulation, fn _ -> {[], []} end
+      {:ok, _} = SimulationsSupervisor.start_child(simulation)
+
+      :ok
+    end
+
+    test "terminates Simulation", %{simulation: simulation} do
+      assert :ok = Simulation.terminate(simulation)
+      assert [] = Registry.lookup(Storm.Registry.Simulation, simulation.id)
     end
   end
 

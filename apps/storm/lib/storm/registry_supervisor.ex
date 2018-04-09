@@ -7,6 +7,7 @@ defmodule Storm.RegistrySupervisor do
 
   def init(_) do
     children = [
+      {Registry, name: Storm.Registry.SimulationSupervisor, keys: :unique},
       {Registry, name: Storm.Registry.Simulation, keys: :unique},
       {Registry, name: Storm.Registry.Dispatcher, keys: :unique},
       {Registry, name: Storm.Registry.Launcher, keys: :unique},
