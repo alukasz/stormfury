@@ -2,53 +2,50 @@ defmodule Storm.SimulationServerTest do
   use ExUnit.Case, async: true
 
   import Mox
+  import Storm.SimulationHelper
 
+  alias Storm.Simulation
   alias Storm.Simulation.SimulationServer
   alias Storm.Mock
 
-  setup do
-    id = make_ref()
-    simulation = %Db.Simulation{
-      id: id,
-      duration: 0,
-      sessions: [%Db.Session{id: make_ref(), simulation_id: id}]
-    }
+  setup :default_simulation
 
-    {:ok, simulation: simulation}
+  describe "start_link/1" do
+    setup :start_config_server
+
+    test "starts new SimulationServer", %{simulation: %{id: id},
+                                          state_pid: state_pid} do
+      assert {:ok, pid} = SimulationServer.start_link([id, state_pid])
+      assert is_pid(pid)
+    end
+
+    test "registers name", %{simulation: %{id: id},
+                            state_pid: state_pid} do
+      SimulationServer.start_link([id, state_pid])
+
+      assert [_] = Registry.lookup(Storm.Registry.Simulation, id)
+    end
   end
 
   describe "init/1" do
-    setup %{simulation: simulation} do
-      Db.Simulation.insert(simulation)
+    setup :start_config_server
 
-      :ok
+    test "initializes state", %{simulation: %{id: id}, state_pid: state_pid} do
+      assert {:ok, %Simulation{id: ^id}} = SimulationServer.init(state_pid)
     end
 
-    test "initializes state", %{simulation: %{id: id} = simulation} do
-      assert SimulationServer.init(id) == {:ok, simulation}
-    end
+    test "restores state from Db", %{simulation: simulation,
+                                     state_pid: state_pid} do
+      insert_simulation(simulation, clients_started: 20)
 
-    test "restores state from Db", %{simulation: %{id: id} = simulation} do
-      Db.Simulation.update(simulation, clients_started: 20)
-
-      assert {:ok, %{clients_started: 20}} = SimulationServer.init(id)
-    end
-
-    test "sends message to start dependencies", %{simulation: %{id: id}} do
-      SimulationServer.init(id)
-
-      assert_receive :initialize
+      assert {:ok, %{clients_started: 20}} = SimulationServer.init(state_pid)
     end
   end
 
-  describe "handle_call({:get_ids, number}, _, _)" do
-    setup %{simulation: simulation} do
-      Db.Repo.insert(simulation)
+  describe "handle_call {:get_ids, number}" do
+    setup :start_config_server
 
-      :ok
-    end
-
-    test "replies with range of clients ids to start", %{simulation: simulation} do
+    test "replies with range of ids to start", %{simulation: simulation} do
       assert {:reply, 1..10, _} =
         SimulationServer.handle_call({:get_ids, 10}, :from, simulation)
     end
@@ -61,6 +58,7 @@ defmodule Storm.SimulationServerTest do
     test "updates Db.Simulation", %{simulation: simulation} do
       SimulationServer.handle_call({:get_ids, 10}, :from, simulation)
 
+      wait_for_cast()
       assert %{clients_started: 10} = Db.Repo.get(Db.Simulation, simulation.id)
     end
   end
@@ -115,5 +113,9 @@ defmodule Storm.SimulationServerTest do
 
       assert_receive {:"$gen_call", _, :perform}
     end
+  end
+
+  defp wait_for_cast do
+    :timer.sleep(10)
   end
 end

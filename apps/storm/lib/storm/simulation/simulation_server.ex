@@ -1,6 +1,7 @@
 defmodule Storm.Simulation.SimulationServer do
   use GenServer
 
+  alias Storm.State
   alias Storm.Simulation
   alias Storm.Launcher
 
@@ -8,24 +9,25 @@ defmodule Storm.Simulation.SimulationServer do
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
-  def start_link(%Db.Simulation{id: id}) do
-    GenServer.start_link(__MODULE__, id, name: name(id))
+  def start_link([id, state_pid]) do
+    GenServer.start_link(__MODULE__, state_pid, name: name(id))
   end
 
-  def init(id) do
-    Logger.metadata(simulation: id)
+  def init(state_pid) do
+    state = State.simulation(state_pid)
+    Logger.metadata(simulation: state.id)
     Logger.info("Initializing simulation")
-    Process.send_after(self(), :initialize, 50)
+    Process.send_after(self(), :initialize, :timer.seconds(1))
 
-    {:ok, Db.Simulation.get(id)}
+    {:ok, state}
   end
 
   def handle_call({:get_ids, number}, _, %{clients_started: started} = simulation) do
     new_started = started + number
     range = (started + 1)..new_started
-    simulation = Db.Simulation.update(simulation, clients_started: new_started)
+    State.update_simulation(simulation.state_pid, clients_started: new_started)
 
-    {:reply, range, simulation}
+    {:reply, range, %{simulation | clients_started: new_started}}
   end
 
   def handle_info(:initialize, simulation) do

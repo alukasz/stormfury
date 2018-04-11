@@ -21,8 +21,16 @@ defmodule Storm.SimulationHelper do
     {:ok, simulation: simulation, session: session}
   end
 
-  def insert_simulation(%{simulation: simulation}) do
-    Db.Simulation.insert(translate_simulation(simulation))
+
+  def insert_simulation(simulation, attrs \\ [])
+  def insert_simulation(%{simulation: simulation}, attrs) do
+    insert_simulation(simulation, attrs)
+  end
+  def insert_simulation(simulation, attrs) do
+    simulation
+    |> translate_simulation()
+    |> Map.merge(Enum.into(attrs, %{}))
+    |> Db.Simulation.insert()
   end
 
   def start_config_server(%{simulation: simulation} = state) do
@@ -30,7 +38,7 @@ defmodule Storm.SimulationHelper do
 
     {:ok, pid} = start_supervised({StateServer, [simulation.id, self()]})
 
-    {:ok, state_pid: pid}
+    {:ok, state_pid: pid, simulation: %{simulation | state_pid: pid}}
   end
 
   defp translate_simulation(%Db.Simulation{} = simulation) do

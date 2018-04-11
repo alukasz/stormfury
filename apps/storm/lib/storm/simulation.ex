@@ -1,6 +1,18 @@
 defmodule Storm.Simulation do
   alias Storm.SimulationsSupervisor
 
+  defstruct [
+    :id,
+    :url,
+    :duration,
+    :protocol_mod,
+    :transport_mod,
+    sessions: [],
+    clients_started: 0,
+    supervisor_pid: nil,
+    state_pid: nil
+  ]
+
   def start(%Db.Simulation{} = simulation) do
     SimulationsSupervisor.start_child(simulation)
   end
