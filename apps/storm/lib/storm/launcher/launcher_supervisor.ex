@@ -3,9 +3,9 @@ defmodule Storm.Launcher.LauncherSupervisor do
 
   alias Storm.Launcher.LauncherServer
 
-  def start_link(sessions) do
+  def start_link([sessions, dispatcher]) do
     {:ok, sup} = DynamicSupervisor.start_link(__MODULE__, [])
-    start_launchers(sup, sessions)
+    start_launchers(sup, sessions, dispatcher)
 
     {:ok, sup}
   end
@@ -21,7 +21,7 @@ defmodule Storm.Launcher.LauncherSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  defp start_launchers(pid, sessions) do
+  defp start_launchers(pid, sessions, d) do
     Enum.each(sessions, &start_child(pid, &1.id))
   end
 

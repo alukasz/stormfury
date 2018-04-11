@@ -1,4 +1,11 @@
 defmodule Storm.Dispatcher do
+  defstruct [
+    :simulation_id,
+    :simulation_pid,
+    :supervisor_pid,
+    to_start: []
+  ]
+
   def start_clients(simulation_id, session_id, ids) do
     clients =
       session_id

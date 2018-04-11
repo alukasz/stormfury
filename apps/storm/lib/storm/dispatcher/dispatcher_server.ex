@@ -7,22 +7,26 @@ defmodule Storm.Dispatcher.DispatcherServer do
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
-  defmodule State do
-    defstruct [
-      :simulation_id,
-      to_start: []
-    ]
+  def start_link([%Dispatcher{}, _] = opts) do
+    GenServer.start_link(__MODULE__, opts)
   end
 
-  def start_link(simulation_id) do
-    GenServer.start_link(__MODULE__, simulation_id, name: name(simulation_id))
-  end
-
-  def init(simulation_id) do
+  def init([simulation_id, simulation_pid, supervisor_pid, sessions]) do
     Logger.metadata(simulation: simulation_id)
+
+
+
+    Storm.Launcher.LauncherSupervisor.start_link([sessions, self()])
+
     schedule_start_clients()
 
-    {:ok, %State{simulation_id: simulation_id}}
+    state = %Dispatcher{
+      simulation_id: simulation_id,
+      supervisor_pid: supervisor_
+    }
+
+
+    {:ok, }
   end
 
   def handle_call({:add_clients, clients}, _, state) do

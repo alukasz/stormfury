@@ -5,12 +5,14 @@ defmodule Storm.Launcher.LauncherServer do
   alias Storm.Launcher
   alias Storm.Simulation
 
-  def start_link(session_id) do
-    GenServer.start_link(__MODULE__, session_id, name: name(session_id))
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts)
   end
 
-  def init(session_id) do
-    {:ok, Db.Session.get(session_id)}
+  def init([session_id, dispatcher]) do
+    session = Db.Session.get(session_id)
+
+    {:ok, %{session | dispatcher: dispatcher}}
   end
 
   def handle_call(:perform, _from, session) do
