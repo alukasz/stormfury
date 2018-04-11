@@ -4,15 +4,17 @@ defmodule Storm.State.StateServer do
   alias Storm.Simulation
   alias Storm.Session
   alias Storm.State
+  alias Storm.Simulation.SimulationSuperisor
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
   end
 
   def init([simulation_id, supervisor_pid]) do
+    send(self(), :start_simulation_server)
+
     {:ok, get_state(simulation_id, supervisor_pid)}
   end
-
 
   def handle_call(:get_simulation_state, _, state) do
     state = refresh_state(state)
@@ -33,6 +35,16 @@ defmodule Storm.State.StateServer do
   end
   def handle_cast({:update_session, id, attrs}, state) do
     %Db.Session{} = Db.Session.update(state.sessions[id], attrs)
+
+    {:noreply, state}
+  end
+
+  def handle_info(:start_simulation_server, state) do
+    SimulationSuperisor.start_simulation(
+      state.supervisor_pid,
+      state.simulation.id,
+      self()
+    )
 
     {:noreply, state}
   end

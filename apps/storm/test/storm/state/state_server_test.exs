@@ -26,7 +26,7 @@ defmodule Storm.State.StateServerTest do
   setup :insert_simulation
 
   describe "start_link/1" do
-    test "initializes state", %{simulation: simulation} do
+    test "starts StateServer", %{simulation: simulation} do
       assert {:ok, pid} =  StateServer.start_link([simulation.id, self()])
       assert is_pid(pid)
     end
@@ -35,6 +35,12 @@ defmodule Storm.State.StateServerTest do
   describe "init/1" do
     test "initializes state", %{simulation: simulation, state: state} do
       assert StateServer.init([simulation.id, self()]) == {:ok, state}
+    end
+
+    test "sends message to start simulation server", %{simulation: simulation} do
+      StateServer.init([simulation.id, self()])
+
+      assert_receive :start_simulation_server
     end
   end
 
@@ -91,6 +97,16 @@ defmodule Storm.State.StateServerTest do
       assert {:noreply, ^state} = StateServer.handle_cast(request, state)
 
       assert %{clients_started: 50} = Db.Session.get(session.id)
+    end
+  end
+
+  describe "handle_info :start_simulation_server" do
+    test "starts SimulationServer", %{state: state} do
+      spawn fn ->
+        assert StateServer.handle_info(:start_simulation_server, state)
+      end
+
+      assert_receive {_, _, {:start_child, %{id: Storm.Simulation.SimulationServer}}}
     end
   end
 end

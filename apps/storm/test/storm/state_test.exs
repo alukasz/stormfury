@@ -19,13 +19,6 @@ defmodule Storm.StateTest do
     {:ok, state: state}
   end
 
-  describe "start_link/1" do
-    test "starts server", %{simulation: %{id: id}} do
-      assert {:ok, pid} = State.start_link([id, self()])
-      assert is_pid(pid)
-    end
-  end
-
   describe "simulation/1" do
     setup :start_server
 

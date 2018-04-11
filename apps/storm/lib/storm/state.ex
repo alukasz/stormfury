@@ -7,8 +7,6 @@ defmodule Storm.State do
     sessions: %{}
   ]
 
-  defdelegate start_link(opts), to: StateServer
-
   def simulation(pid) do
     GenServer.call(pid, :get_simulation_state)
   end
