@@ -34,6 +34,15 @@ defmodule Db.SessionTest do
       assert %Session{id: 42, clients_started: 10} = Repo.get(Session, 42)
     end
 
+    test "updates session by id" do
+      Repo.insert(%Session{id: 42})
+
+      assert %Session{id: 42, clients_started: 10} =
+        Session.update(42, clients_started: 10)
+
+      assert %Session{id: 42, clients_started: 10} = Repo.get(Session, 42)
+    end
+
     test "returns error tuple when record does not exist" do
       assert {:error, :not_found} =
         Session.update(%Session{id: 42}, clients_started: 10)

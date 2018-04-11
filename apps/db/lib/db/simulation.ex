@@ -44,6 +44,9 @@ defmodule Db.Simulation do
   def update(%Simulation{id: id}, attrs) do
     Repo.update(Simulation, id, attrs)
   end
+  def update(id, attrs) do
+    Repo.update(Simulation, id, attrs)
+  end
 
   defp insert_sessions(sessions) do
     sessions

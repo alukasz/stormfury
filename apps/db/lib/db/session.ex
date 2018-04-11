@@ -23,6 +23,9 @@ defmodule Db.Session do
   def update(%Session{id: id}, attrs) do
     Repo.update(Session, id, attrs)
   end
+  def update(id, attrs) do
+    Repo.update(Session, id, attrs)
+  end
 
   def get_by_simulation_id(simulation_id) do
     %Session{}
