@@ -70,6 +70,12 @@ defmodule Db.RepoTest do
 
       assert [] = Repo.match({TestStruct, :_, :_, :_, "will match"})
     end
+
+    test "returns error when invalid match spec" do
+      insert_record(TestStruct.record(id: 1, foo: "will match"))
+
+      assert {:error, _} = Repo.match({NotAStruct, :_, :_, "will match"})
+    end
   end
 
   describe "transaction/1" do

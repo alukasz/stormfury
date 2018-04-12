@@ -111,6 +111,19 @@ defmodule Storm.Simulation.DispatcherServerTest do
       assert started_per_session(agent) == []
     end
 
+    @tag capture_log: true
+    test "no remote simulations", %{state: state, agent: agent} do
+      :pg2.leave(Fury.group(state.simulation_id), self())
+      track_started_clients(agent)
+      state = %{state | to_start: [s1: 1, s2: 2]}
+
+      {:noreply, state} = DispatcherServer.handle_info(:start_clients, state)
+
+      assert {:s1, 1} in state.to_start
+      assert {:s2, 2} in state.to_start
+      assert started_per_session(agent) == []
+    end
+
     test "starts clients from sessions", %{state: state, agent: agent} do
       track_started_clients(agent)
       state = %{state | to_start: [s1: 1, s1: 2, s2: 1, s2: 2, s2: 3]}

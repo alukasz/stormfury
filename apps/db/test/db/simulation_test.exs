@@ -62,6 +62,14 @@ defmodule Db.SimulationsTest do
       refute Repo.get(Simulation, 42)
       refute Repo.get(Session, 11)
     end
+
+    test "does not store Simulation on error" do
+      simulation =
+        %Simulation{id: 42, sessions: [id: 11]}
+        |> Map.put(:invalid_key, nil)
+
+      assert {:error, _} = Simulation.insert(simulation)
+    end
   end
 
   describe "update/2" do

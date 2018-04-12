@@ -9,5 +9,12 @@ defmodule Storm.DSL.UtilTest do
 
       assert Util.replace_vars("{{v1}}", assigns) == "v3"
     end
+
+    test "returns unmodified data when data is not binary" do
+      assigns = %{"key" => "val"}
+
+      assert Util.replace_vars(%{"key" => "val"}, assigns) ==
+        %{"key" => "val"}
+    end
   end
 end

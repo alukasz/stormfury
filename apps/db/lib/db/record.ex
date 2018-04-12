@@ -1,7 +1,7 @@
 defmodule Db.Record do
   defguard is_record(record) when is_tuple(record) and is_atom(elem(record, 0))
 
-  def from_struct(%mod{} = struct) do
+  def from_struct(%mod{id: _} = struct) do
     List.to_tuple([mod | record_values(struct)])
   end
 

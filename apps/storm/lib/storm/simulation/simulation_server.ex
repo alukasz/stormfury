@@ -75,12 +75,12 @@ defmodule Storm.Simulation.SimulationServer do
   end
   def handle_info(:perform, %{duration: duration} = state) do
     Logger.info("Starting simulation")
-    Process.send_after(self(), :cleanup, :timer.seconds(duration))
+    Process.send_after(self(), :terminate, :timer.seconds(duration))
     turn_launchers(state)
 
     {:noreply, state}
   end
-  def handle_info(:cleanup, %{id: id} = state) do
+  def handle_info(:terminate, %{id: id} = state) do
     Logger.info("Simulation finished, terminating")
     Persistence.update_simulation(id, state: :finished)
     RemoteSimulation.terminate(state)

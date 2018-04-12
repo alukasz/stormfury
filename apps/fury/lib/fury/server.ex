@@ -18,7 +18,7 @@ defmodule Fury.Server do
     {:reply, result, state}
   end
 
-  defp create_group(%{id: id} = simulation) do
+  defp create_group(%{id: id}) do
     :pg2.create(Fury.group(id))
   end
 end

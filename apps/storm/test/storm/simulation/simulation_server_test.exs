@@ -90,7 +90,7 @@ defmodule Storm.SimulationServerTest do
     end
   end
 
-  describe "handle_info(:initialize, _)" do
+  describe "handle_info :initialize" do
     setup :insert_simulation
     setup do
       stub Mock.Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
@@ -119,16 +119,16 @@ defmodule Storm.SimulationServerTest do
     end
   end
 
-  describe "handle_info(:perform, _)" do
+  describe "handle_info :perform" do
     setup %{simulation: simulation} do
       {:ok, simulation: %{simulation | duration: 0, launchers_pids: [self()]}}
     end
 
-    test "sends message to cleanup simulation", %{simulation: simulation} do
+    test "sends message to terminate simulation", %{simulation: simulation} do
       spawn fn ->
         SimulationServer.handle_info(:perform, simulation)
 
-        assert_receive :cleanup
+        assert_receive :terminate
       end
     end
 
@@ -138,6 +138,31 @@ defmodule Storm.SimulationServerTest do
       end
 
       assert_receive {:"$gen_cast", :perform}
+    end
+  end
+
+  describe "handle_info :terminate" do
+    setup :insert_simulation
+    setup %{simulation: %{id: id} = simulation} do
+      :pg2.create(Fury.group(id))
+
+      {:ok, simulation: %{simulation | supervisor_pid: self()}}
+    end
+
+    test "terminates remote nodes", %{simulation: simulation} do
+      :pg2.join(Fury.group(simulation.id), self())
+
+      spawn fn ->
+        SimulationServer.handle_info(:terminate, simulation)
+      end
+
+      assert_receive {_, _, :terminate}
+    end
+
+    test "changes simulation state to :finished", %{simulation: simulation} do
+      SimulationServer.handle_info(:terminate, simulation)
+
+      assert %{state: :finished} = Db.Simulation.get(simulation.id)
     end
   end
 end

@@ -2,6 +2,7 @@ defmodule Storm.RemoteSimulationTest do
   use ExUnit.Case, async: true
 
   import Storm.SimulationHelper
+  import ExUnit.CaptureLog
   import Mox
 
   alias Storm.RemoteSimulation
@@ -22,6 +23,29 @@ defmodule Storm.RemoteSimulationTest do
       RemoteSimulation.start(simulation)
 
       assert Fury.group(simulation.id) in :pg2.which_groups()
+    end
+
+    test "logs error when failed to start remote simulation",
+        %{simulation: simulation} do
+      reason = :not_remote_enough
+      node = :bad@node
+      error = {node, {:error, reason}}
+      stub Mock.Fury, :start_simulation, fn _ -> {[error], []} end
+
+      logs = capture_log(fn -> RemoteSimulation.start(simulation) end)
+
+      assert logs =~ "Failed to start simulation on node :#{node}"
+      assert logs =~ "#{reason}"
+    end
+
+    test "logs error when failed to connect to node",
+      %{simulation: simulation} do
+      node = :bad@node
+      stub Mock.Fury, :start_simulation, fn _ -> {[], [node]} end
+
+      logs = capture_log(fn -> RemoteSimulation.start(simulation) end)
+
+      assert logs =~ "Failed to start simulations on nodes [:#{node}]"
     end
   end
 

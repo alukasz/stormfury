@@ -81,15 +81,23 @@ defmodule Fury.ClientTest do
 
       verify!()
     end
+
+    test "returns updated protocol state" do
+      stub Protocol, :format, fn _, _ -> {:ok, "data", :updated_state} end
+      stub Transport, :push, fn _, _ -> :ok end
+
+      assert Client.make_request(Transport, self(), Protocol, %{}, "data") ==
+        :updated_state
+    end
+
+    test "returns unmodified protocol state on error" do
+      stub Protocol, :format, fn _, _ -> {:error, nil} end
+
+      assert Client.make_request(Transport, self(), Protocol, :state, "data") ==
+        :state
+    end
   end
 
-  test "returns updated protocol state" do
-    stub Protocol, :format, fn _, _ -> {:ok, "data", :updated_state} end
-    stub Transport, :push, fn _, _ -> :ok end
-
-    assert Client.make_request(Transport, self(), Protocol, %{}, "data") ==
-      :updated_state
-  end
 
   defp start_config_server(%{simulation: simulation}) do
     {:ok, _} = start_supervised({Fury.Simulation.ConfigServer, simulation})
