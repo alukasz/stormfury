@@ -15,10 +15,10 @@ defmodule Storm.Launcher.LauncherServer do
     {:ok, state}
   end
 
-  def handle_call(:perform, _from, session) do
+  def handle_cast(:perform, session) do
     schedule_start_clients()
 
-    {:reply, :ok, session}
+    {:noreply, session}
   end
 
   def handle_info(:start_clients, session) do

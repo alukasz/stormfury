@@ -16,6 +16,7 @@ defmodule Storm.Simulation.SimulationServer do
   def init([simulation_id, supervisor_pid]) do
     Logger.metadata(simulation: simulation_id)
     Logger.info("Starting SimulationServer")
+    Process.send_after(self(), :initialize, :timer.seconds(1))
 
     state =
       simulation_id

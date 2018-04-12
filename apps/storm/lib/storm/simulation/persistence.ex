@@ -19,6 +19,7 @@ defmodule Storm.Simulation.Persistence do
   defp translate_simulation(%Db.Simulation{} = simulation) do
     %Simulation{
       id: simulation.id,
+      url: simulation.url,
       duration: simulation.duration,
       protocol_mod: simulation.protocol_mod,
       transport_mod: simulation.transport_mod,
