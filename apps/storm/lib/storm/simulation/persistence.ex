@@ -24,6 +24,7 @@ defmodule Storm.Simulation.Persistence do
       protocol_mod: simulation.protocol_mod,
       transport_mod: simulation.transport_mod,
       clients_started: simulation.clients_started,
+      state: simulation.state,
       sessions: Enum.map(
         simulation.sessions,
         &translate_session(simulation.id, &1)
@@ -39,6 +40,7 @@ defmodule Storm.Simulation.Persistence do
       arrival_rate: session.arrival_rate,
       clients_started: session.clients_started,
       scenario: session.scenario,
+      state: session.state,
     }
   end
 end

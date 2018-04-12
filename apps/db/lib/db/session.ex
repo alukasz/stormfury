@@ -9,7 +9,8 @@ defmodule Db.Session do
     :arrival_rate,
     :scenario,
     :simulation_id,
-    clients_started: 0
+    clients_started: 0,
+    state: :ready
   ]
 
   def get(id) do

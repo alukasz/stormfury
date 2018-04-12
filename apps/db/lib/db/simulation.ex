@@ -10,7 +10,8 @@ defmodule Db.Simulation do
     :protocol_mod,
     :transport_mod,
     sessions: [],
-    clients_started: 0
+    clients_started: 0,
+    state: :ready
   ]
 
   def get(id) do

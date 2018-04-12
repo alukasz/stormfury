@@ -7,5 +7,6 @@ defmodule Storm.Session do
     :scenario,
     :dispatcher_pid,
     clients_started: 0,
+    state: :ready
   ]
 end

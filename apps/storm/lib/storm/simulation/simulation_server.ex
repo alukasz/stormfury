@@ -16,12 +16,20 @@ defmodule Storm.Simulation.SimulationServer do
   def init([simulation_id, supervisor_pid]) do
     Logger.metadata(simulation: simulation_id)
     Logger.info("Starting SimulationServer")
-    Process.send_after(self(), :initialize, :timer.seconds(1))
 
     state =
       simulation_id
       |> Persistence.get_simulation()
       |> Map.put(:supervisor_pid, supervisor_pid)
+
+    case state.state do
+      :ready ->
+        Process.send_after(self(), :initialize, :timer.seconds(1))
+
+      :running ->
+        Process.send_after(self(), :perform, :timer.seconds(1))
+        # send(self(), :perform)
+    end
 
     {:ok, state}
   end
@@ -33,6 +41,7 @@ defmodule Storm.Simulation.SimulationServer do
     %{dispatcher_pid: dispatcher_pid, sessions_pids: sessions_pids} = state
     session =
       state
+      |> fetch_state()
       |> find_session(session_id)
       |> Map.put(:dispatcher_pid, dispatcher_pid)
 
@@ -57,8 +66,9 @@ defmodule Storm.Simulation.SimulationServer do
     create_group(simulation)
     start_remote_simulations(simulation)
     send(self(), :perform)
+    Persistence.update_simulation(simulation.id, state: :running)
 
-    {:noreply, simulation}
+    {:noreply, %{simulation | state: :running}}
   end
   def handle_info(:perform, %{duration: duration} = simulation) do
     Logger.info("Starting simulation")
@@ -74,6 +84,13 @@ defmodule Storm.Simulation.SimulationServer do
     stop_simulation(simulation)
 
     {:noreply, simulation}
+  end
+
+  defp fetch_state(state) do
+    new_state = Persistence.get_simulation(state.id)
+
+    %{new_state | supervisor_pid: state.supervisor_pid,
+      sessions_pids: state.sessions_pids}
   end
 
   defp create_group(%{id: id}) do

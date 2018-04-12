@@ -12,13 +12,25 @@ defmodule Storm.Launcher.LauncherServer do
   def init([simulation_id, session_id]) do
     state = Simulation.get_session(simulation_id, session_id)
 
+    case state.state do
+      :running ->
+        schedule_start_clients()
+
+      _ ->
+        :ok
+    end
+
     {:ok, state}
   end
 
-  def handle_cast(:perform, session) do
+  def handle_cast(:perform, %{state: :ready, id: id} = state) do
+    Persistence.update_session(id, state: :running)
     schedule_start_clients()
 
-    {:noreply, session}
+    {:noreply, state}
+  end
+  def handle_cast(:perform, state) do
+    {:noreply, state}
   end
 
   def handle_info(:start_clients, session) do

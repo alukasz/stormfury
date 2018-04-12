@@ -12,6 +12,7 @@ defmodule Storm.Simulation do
     sessions_pids: [],
     dispatcher_pid: nil,
     supervisor_pid: nil,
+    state: :ready,
   ]
 
   def start(simulation_id) do
