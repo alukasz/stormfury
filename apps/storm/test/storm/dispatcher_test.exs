@@ -1,26 +1,24 @@
 defmodule Storm.DispatcherTest do
   use ExUnit.Case, async: true
 
+  import Storm.SimulationHelper
+
   alias Storm.Dispatcher
   alias Storm.Dispatcher.DispatcherServer
 
+  setup :default_simulation
+  setup :insert_simulation
+  setup :start_simulation_server
+
   describe "start_clients/3" do
-    setup do
-      simulation_id = make_ref()
-      {:ok, _} = start_supervised({DispatcherServer, simulation_id})
+    setup %{simulation: %{id: simulation_id}} do
+      {:ok, pid} = start_supervised({DispatcherServer, simulation_id})
 
-      {:ok, simulation_id: simulation_id}
+      {:ok, server_pid: pid}
     end
 
-    test "replies :ok", %{simulation_id: id} do
-      assert Dispatcher.start_clients(id, :session, 1..10) == :ok
-    end
-  end
-
-  describe "name/1" do
-    test "returns :via tuple for name registration" do
-      assert Dispatcher.name(:id) ==
-        {:via, Registry, {Storm.Registry.Dispatcher, :id}}
+    test "returns :ok", %{server_pid: pid} do
+      assert Dispatcher.start_clients(pid, :session, 1..10) == :ok
     end
   end
 end

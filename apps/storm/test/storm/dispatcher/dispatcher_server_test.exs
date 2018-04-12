@@ -3,50 +3,60 @@ defmodule Storm.Simulation.DispatcherServerTest do
 
   import Mox
 
+  alias Storm.Dispatcher
   alias Storm.Dispatcher.DispatcherServer
-  alias Storm.Dispatcher.DispatcherServer.State
   alias Storm.Mock
 
   setup do
     simulation_id = make_ref()
-    state = %State{simulation_id: simulation_id}
+    state = %Dispatcher{simulation_id: simulation_id}
 
     {:ok, state: state, simulation_id: simulation_id}
   end
 
   describe "start_link/1" do
+    setup :register_self_as_simulation
+
     test "starts new DispatcherServer", %{simulation_id: id} do
-      assert {:ok, pid} = DispatcherServer.start_link(id)
-      assert [{^pid, _}] = Registry.lookup(Storm.Registry.Dispatcher, id)
+      spawn_link fn ->
+        assert {:ok, pid} = DispatcherServer.start_link(id)
+        assert [{^pid, _}] = Registry.lookup(Storm.Registry.Dispatcher, id)
+      end
     end
   end
-
 
   describe "init/1" do
+    setup :register_self_as_simulation
+
     test "initializes state", %{simulation_id: id, state: state} do
-      assert DispatcherServer.init(id) == {:ok, state}
+      spawn_link fn ->
+        assert DispatcherServer.init(id) == {:ok, state}
+      end
+    end
+
+    test "registers insets to simulation", %{simulation_id: id} do
+      spawn_link fn ->
+        DispatcherServer.init(id)
+      end
+
+      assert_receive {:"$gen_call", _, :set_dispatcher}
     end
   end
 
-  describe "handle_call({:start_clients, session_id, ids}, _, _)" do
-    test "replies :ok", %{state: state} do
-      assert {:reply, :ok, _} =
-        DispatcherServer.handle_call({:add_clients, []}, :from, state)
-    end
-
+  describe "handle_cast {:start_clients, session_id, ids}" do
     test "adds clients state.to_start", %{state: state} do
       message = {:add_clients, id: 1, id: 2}
 
-      {_, _, state} = DispatcherServer.handle_call(message, :from, state)
+      {:noreply, state} = DispatcherServer.handle_cast(message, state)
 
       assert %{to_start: [id: 1, id: 2]} = state
     end
 
-    test "append clients existing clients in state.to_start", %{state: state} do
+    test "appends new clients to state.to_start", %{state: state} do
       state = %{state | to_start: [id1: 1, id1: 2]}
       message = {:add_clients, id2: 1, id2: 2}
 
-      {_, _, state} = DispatcherServer.handle_call(message, :from, state)
+      {_, state} = DispatcherServer.handle_cast(message, state)
 
       assert %{to_start: [id1: 1, id1: 2, id2: 1, id2: 2]} = state
     end
@@ -130,6 +140,12 @@ defmodule Storm.Simulation.DispatcherServerTest do
           assert amount in unquote(Macro.escape(range))
         end
       end
+    end
+
+    defp register_self_as_simulation(%{simulation_id: simulation_id}) do
+      Registry.register(Storm.Registry.Simulation, simulation_id, nil)
+
+      :ok
     end
 
     defp start_pg2_processes(group, number) do

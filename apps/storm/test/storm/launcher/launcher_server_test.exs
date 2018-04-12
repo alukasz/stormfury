@@ -2,48 +2,60 @@ defmodule Storm.Launcher.LauncherServerTest do
   use ExUnit.Case, async: true
 
   import Mox
+  import Storm.SimulationHelper
 
   alias Storm.Dispatcher.DispatcherServer
   alias Storm.Launcher.LauncherServer
-  alias Storm.Simulation.SimulationServer
   alias Storm.Mock
 
-  setup do
-    simulation_id = make_ref()
-    session = %Db.Session{
-      id: make_ref(),
-      clients: 10,
-      arrival_rate: 2,
-      simulation_id: simulation_id
-    }
-    Db.Session.insert(session)
-
-    {:ok, session: session, simulation_id: simulation_id}
-  end
+  setup :default_simulation
+  setup :default_session
+  setup :insert_simulation
 
   describe "start_link/2" do
-    test "starts new LauncherServer", %{session: %{id: session_id}} do
-      assert {:ok, pid} = LauncherServer.start_link(session_id)
-      assert is_pid(pid)
+    setup :register_self_as_simulation
+
+    test "starts new LauncherServer", %{simulation: %{id: simulation_id},
+                                        session: %{id: session_id}} do
+      spawn_link fn ->
+        assert {:ok, pid} =
+          LauncherServer.start_link([simulation_id, session_id])
+        assert is_pid(pid)
+      end
     end
   end
 
   describe "init/1" do
-    test "initializes state", %{session: session} do
-      assert LauncherServer.init(session.id) == {:ok, session}
+    setup :register_self_as_simulation
+
+    test "initializes state", %{simulation: simulation, session: session} do
+      spawn_link fn ->
+        assert LauncherServer.init([simulation.id, session.id]) ==
+          {:ok, session}
+      end
     end
 
-    test "restores state from Db", %{session: session} do
+    test "restores state from Db", %{simulation: simulation,
+                                     session: session} do
       Db.Session.update(session, clients_started: 20)
-      assert {:ok, %{clients_started: 20}} = LauncherServer.init(session.id)
+
+      spawn_link fn ->
+        assert {:ok, %{clients_started: 20}} =
+          LauncherServer.init([simulation.id, session.id])
+      end
     end
   end
+
   describe "handle_info(:start_clients, _)" do
     setup :create_pg2_group
     setup :start_simulation_server
     setup :start_dispatcher_server
+    setup %{session: session, dispatcher: dispatcher} do
+      {:ok, session: %{session | dispatcher_pid: dispatcher}}
+    end
 
-    test "starts arrival_rate clients", %{session: session, dispatcher: dispatcher} do
+    test "starts arrival_rate clients", %{session: session,
+                                          dispatcher: dispatcher} do
       allow(Mock.Fury, self(), dispatcher)
       expect Mock.Fury, :start_clients, fn _, _, [_, _] -> :ok end
 
@@ -53,8 +65,8 @@ defmodule Storm.Launcher.LauncherServerTest do
       verify!()
     end
 
-    test "when less than arrival rate",
-        %{dispatcher: dispatcher, session: session} do
+    test "when less than arrival rate", %{dispatcher: dispatcher,
+                                          session: session} do
       allow(Mock.Fury, self(), dispatcher)
       expect Mock.Fury, :start_clients, fn _, _, [_] -> :ok end
       session = %{session | clients_started: 9}
@@ -65,8 +77,8 @@ defmodule Storm.Launcher.LauncherServerTest do
       verify!()
     end
 
-    test "does not start clients when all started",
-        %{dispatcher: dispatcher, session: session} do
+    test "does not start clients when all started", %{dispatcher: dispatcher,
+                                                      session: session} do
       allow(Mock.Fury, self(), dispatcher)
       stub Mock.Fury, :start_clients, fn _, _, _ -> send(self(), :called) end
       session = %{session | clients_started: 10}
@@ -76,7 +88,7 @@ defmodule Storm.Launcher.LauncherServerTest do
       refute_receive _
     end
 
-    test "updated Db.Session", %{dispatcher: dispatcher, session: session} do
+    test "updates Db.Session", %{dispatcher: dispatcher, session: session} do
       allow(Mock.Fury, self(), dispatcher)
       stub Mock.Fury, :start_clients, fn _, _, _ -> :ok end
       session = %{session | clients_started: 5}
@@ -86,37 +98,25 @@ defmodule Storm.Launcher.LauncherServerTest do
       assert %{clients_started: 7} = Db.Session.get(session.id)
     end
 
+    defp start_dispatcher_server(%{simulation: %{id: id}}) do
+      {:ok, dispatcher} = start_supervised({DispatcherServer, id})
+
+      {:ok, dispatcher: dispatcher}
+    end
+
     defp wait_for_dispatcher(dispatcher) do
       send(dispatcher, :start_clients)
       :timer.sleep(50)
     end
 
-    defp start_simulation_server(%{simulation_id: id, session: session}) do
-      fake_launcher_server(session)
-      simulation = %Db.Simulation{id: id, duration: 1}
-      :ok = Db.Repo.insert(simulation)
-      {:ok, pid} = start_supervised({SimulationServer, simulation})
-      stub Mock.Fury, :start_simulation, fn _ -> {[], []} end
-      allow(Mock.Fury, self(), pid)
+    defp register_self_as_simulation(%{simulation: %{id: id}}) do
+      Registry.register(Storm.Registry.Simulation, id, nil)
 
       :ok
     end
 
-    defp fake_launcher_server(%{id: id}) do
-      spawn_link fn ->
-        Registry.register(Storm.Registry.Launcher, id, nil)
-        :timer.sleep(1_000)
-      end
-    end
-
-    defp start_dispatcher_server(%{simulation_id: simulation_id}) do
-      {:ok, dispatcher} = start_supervised({DispatcherServer, simulation_id})
-
-      {:ok, dispatcher: dispatcher}
-    end
-
-    defp create_pg2_group(%{simulation_id: simulation_id}) do
-      group = Fury.group(simulation_id)
+    defp create_pg2_group(%{simulation: %{id: id}}) do
+      group = Fury.group(id)
       :pg2.create(group)
       :pg2.join(group, self())
 

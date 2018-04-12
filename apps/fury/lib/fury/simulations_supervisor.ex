@@ -1,7 +1,7 @@
 defmodule Fury.SimulationsSupervisor do
   use DynamicSupervisor
 
-  alias Fury.Simulation.SimulationSuperisor
+  alias Fury.Simulation.SimulationSupervisor
 
   def start_link(_) do
     DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
@@ -20,6 +20,6 @@ defmodule Fury.SimulationsSupervisor do
   end
 
   defp simulation_spec(simulation) do
-    {SimulationSuperisor, simulation}
+    {SimulationSupervisor, simulation}
   end
 end

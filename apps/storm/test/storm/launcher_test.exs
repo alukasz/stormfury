@@ -1,26 +1,26 @@
 defmodule Storm.LauncherTest do
   use ExUnit.Case, async: true
 
+  import Storm.SimulationHelper
+
   alias Storm.Launcher
   alias Storm.Launcher.LauncherServer
 
+  setup :default_simulation
+  setup :default_session
+  setup :insert_simulation
+  setup :start_simulation_server
+  setup :start_server
+
   describe "perform/1" do
-    setup do
-      id = make_ref()
-      {:ok, _} = start_supervised({LauncherServer, id})
-
-      {:ok, session_id: id}
-    end
-
-    test "replies with :ok", %{session_id: session_id} do
-      assert Launcher.perform(session_id) == :ok
+    test "returns :ok", %{server_pid: server} do
+      assert Launcher.perform(server) == :ok
     end
   end
 
-  describe "name/1" do
-    test "returns :via tuple for name registration" do
-      assert Launcher.name(:id) ==
-        {:via, Registry, {Storm.Registry.Launcher, :id}}
-    end
+  def start_server(%{simulation: %{id: id}, session: %{id: session_id}}) do
+    {:ok, pid} = start_supervised({LauncherServer, [id, session_id]})
+
+    {:ok, server_pid: pid}
   end
 end

@@ -1,12 +1,15 @@
 defmodule Storm.SimulationHelper do
   import ExUnit.Callbacks
 
-  alias Storm.Simulation
   alias Storm.Session
-  alias Storm.State.StateServer
+  alias Storm.Simulation
+  alias Storm.Simulation.SimulationServer
 
   def default_simulation(_) do
-    simulation = %Simulation{id: make_ref()}
+    simulation = %Simulation{
+      id: make_ref(),
+      duration: 0,
+    }
 
     {:ok, simulation: simulation}
   end
@@ -15,12 +18,13 @@ defmodule Storm.SimulationHelper do
     session = %Session{
       id: make_ref(),
       simulation_id: id,
+      clients: 10,
+      arrival_rate: 2
     }
     simulation = %{simulation | sessions: [session]}
 
     {:ok, simulation: simulation, session: session}
   end
-
 
   def insert_simulation(simulation, attrs \\ [])
   def insert_simulation(%{simulation: simulation}, attrs) do
@@ -33,12 +37,10 @@ defmodule Storm.SimulationHelper do
     |> Db.Simulation.insert()
   end
 
-  def start_config_server(%{simulation: simulation} = state) do
-    insert_simulation(state)
+  def start_simulation_server(%{simulation: %{id: id}}) do
+    {:ok, _} = start_supervised({SimulationServer, [id, self()]})
 
-    {:ok, pid} = start_supervised({StateServer, [simulation.id, self()]})
-
-    {:ok, state_pid: pid, simulation: %{simulation | state_pid: pid}}
+    :ok
   end
 
   defp translate_simulation(%Db.Simulation{} = simulation) do

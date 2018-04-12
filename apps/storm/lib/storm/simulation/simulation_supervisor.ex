@@ -1,27 +1,31 @@
-defmodule Storm.Simulation.SimulationSuperisor do
+defmodule Storm.Simulation.SimulationSupervisor do
   use Supervisor
 
+  alias Storm.Simulation
+  alias Storm.Simulation.Persistence
   alias Storm.Simulation.SimulationServer
+  alias Storm.Dispatcher.DispatcherSupervisor
 
-  def start_link(%Db.Simulation{} = simulation) do
-    Supervisor.start_link(__MODULE__, simulation, name: name(simulation))
+  def start_link(simulation_id) do
+    Supervisor.start_link(__MODULE__, simulation_id)
   end
 
-  def start_simulation(supervisor_pid, simulation_id, state_pid) do
-    child_spec = {SimulationServer, [simulation_id, state_pid]}
+  def init(simulation_id) do
+    case Persistence.get_simulation(simulation_id) do
+      nil ->
+        :ignore
 
-    Supervisor.start_child(supervisor_pid, child_spec)
+      %Simulation{id: id, sessions: sessions} ->
+        start_simulation(id, sessions)
+    end
   end
 
-  def init(%{id: id}) do
+  defp start_simulation(id, sessions) do
     children = [
-      {StateServer, [id, self()]},
+      {SimulationServer, [id, self()]},
+      {DispatcherSupervisor, [id, sessions]},
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
-  end
-
-  def name(%{id: id}) do
-    {:via, Registry, {Storm.Registry.SimulationSupervisor, id}}
   end
 end

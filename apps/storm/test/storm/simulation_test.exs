@@ -1,42 +1,34 @@
 defmodule Storm.SimulationTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
-  import Mox
+  import Storm.SimulationHelper
 
   alias Storm.Simulation
-  alias Storm.Simulation.SimulationServer
   alias Storm.SimulationsSupervisor
-  alias Storm.Mock.Fury
 
-  setup do
-    simulation = %Db.Simulation{id: make_ref(), duration: 1}
-
-    {:ok, simulation: simulation}
-  end
+  setup :default_simulation
+  setup :insert_simulation
 
   describe "start/1" do
-    setup :set_mox_global
-
-    test "starts new Simulation", %{simulation: simulation} do
-      stub Fury, :start_simulation, fn _ -> {[], []} end
-
-      assert {:ok, _} = Simulation.start(simulation)
-      assert [_] = Registry.lookup(Storm.Registry.Simulation, simulation.id)
+    test "starts new Simulation", %{simulation: %{id: id}} do
+      assert {:ok, _} = Simulation.start(id)
+      assert [_] = Registry.lookup(Storm.Registry.Simulation, id)
     end
   end
 
   describe "terminate/1" do
-    setup :set_mox_global
-    setup %{simulation: simulation} do
-      stub Fury, :start_simulation, fn _ -> {[], []} end
-      {:ok, _} = SimulationsSupervisor.start_child(simulation)
+    setup %{simulation: %{id: id}} do
+      {:ok, pid} = SimulationsSupervisor.start_child(id)
 
-      :ok
+      {:ok, simulation_sup: pid}
     end
 
-    test "terminates Simulation", %{simulation: simulation} do
-      assert :ok = Simulation.terminate(simulation)
-      assert [] = Registry.lookup(Storm.Registry.Simulation, simulation.id)
+    test "terminates Simulation", %{simulation: %{id: id},
+                                    simulation_sup: pid} do
+      assert :ok = Simulation.terminate(pid)
+
+      :timer.sleep(50)
+      assert [] = Registry.lookup(Storm.Registry.Simulation, id)
     end
   end
 
@@ -48,20 +40,12 @@ defmodule Storm.SimulationTest do
   end
 
   describe "get_ids/1" do
-    setup :set_mox_global
-    setup :start_server
+    setup :start_simulation_server
 
     test "returns range of clients ids", %{simulation: %{id: simulation_id}} do
       assert 1..10 = Simulation.get_ids(simulation_id, 10)
       assert 11..20 = Simulation.get_ids(simulation_id, 10)
+      assert 21..25 = Simulation.get_ids(simulation_id, 5)
     end
-  end
-
-  defp start_server(%{simulation: simulation}) do
-    stub Fury, :start_simulation, fn _ -> {[], []} end
-    :ok = Db.Repo.insert(simulation)
-    {:ok, _} = start_supervised({SimulationServer, simulation})
-
-    :ok
   end
 end

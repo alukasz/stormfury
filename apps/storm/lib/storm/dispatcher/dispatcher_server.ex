@@ -2,37 +2,29 @@ defmodule Storm.Dispatcher.DispatcherServer do
   use GenServer
 
   alias Storm.Dispatcher
+  alias Storm.Simulation
 
   require Logger
 
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
-  def start_link([%Dispatcher{}, _] = opts) do
+  def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
   end
 
-  def init([simulation_id, simulation_pid, supervisor_pid, sessions]) do
+  def init(simulation_id) do
     Logger.metadata(simulation: simulation_id)
-
-
-
-    Storm.Launcher.LauncherSupervisor.start_link([sessions, self()])
-
+    Simulation.set_dispatcher(simulation_id)
+    state = %Dispatcher{simulation_id: simulation_id}
     schedule_start_clients()
 
-    state = %Dispatcher{
-      simulation_id: simulation_id,
-      supervisor_pid: supervisor_
-    }
-
-
-    {:ok, }
+    {:ok, state}
   end
 
-  def handle_call({:add_clients, clients}, _, state) do
+  def handle_cast({:add_clients, clients}, state) do
     to_start = Enum.concat(state.to_start, clients)
 
-    {:reply, :ok, %{state | to_start: to_start}}
+    {:noreply, %{state | to_start: to_start}}
   end
 
   def handle_info(:start_clients, %{to_start: []} = state) do
@@ -63,7 +55,7 @@ defmodule Storm.Dispatcher.DispatcherServer do
     |> zip_with_clients(clients)
     |> group_by_pid()
     |> group_by_sessions()
-    |> call_remote_simulations()
+    |> call_remote_sessions()
   end
 
   defp get_remote_pids(simulation_id) do
@@ -94,7 +86,7 @@ defmodule Storm.Dispatcher.DispatcherServer do
     end
   end
 
-  defp call_remote_simulations(pids) do
+  defp call_remote_sessions(pids) do
     Enum.each pids, fn {pid, sessions} ->
       Enum.each sessions, fn {session, clients} ->
         @fury_bridge.start_clients(pid, session, clients)
@@ -104,9 +96,5 @@ defmodule Storm.Dispatcher.DispatcherServer do
 
   defp schedule_start_clients do
     Process.send_after(self(), :start_clients, :timer.seconds(1))
-  end
-
-  defp name(id) do
-    Dispatcher.name(id)
   end
 end

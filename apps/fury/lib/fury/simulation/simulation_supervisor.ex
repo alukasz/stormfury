@@ -1,4 +1,4 @@
-defmodule Fury.Simulation.SimulationSuperisor do
+defmodule Fury.Simulation.SimulationSupervisor do
   use Supervisor, restart: :transient
 
   alias Fury.Simulation

@@ -5,7 +5,7 @@ defmodule Storm.Session do
     :clients,
     :arrival_rate,
     :scenario,
+    :dispatcher_pid,
     clients_started: 0,
-    state_pid: nil
   ]
 end
