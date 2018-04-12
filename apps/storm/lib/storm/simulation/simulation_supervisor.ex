@@ -26,6 +26,6 @@ defmodule Storm.Simulation.SimulationSupervisor do
       {DispatcherSupervisor, [id, sessions]},
     ]
 
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :rest_for_one)
   end
 end
