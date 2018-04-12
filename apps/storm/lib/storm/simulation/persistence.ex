@@ -8,6 +8,12 @@ defmodule Storm.Simulation.Persistence do
     |> translate_simulation()
   end
 
+  def get_session(session_id, simulation_id) do
+    session_id
+    |> Db.Session.get()
+    |> translate_session(simulation_id)
+  end
+
   def update_simulation(simulation_id, attrs) do
     %Db.Simulation{} = Db.Simulation.update(simulation_id, attrs)
   end
@@ -27,12 +33,12 @@ defmodule Storm.Simulation.Persistence do
       state: simulation.state,
       sessions: Enum.map(
         simulation.sessions,
-        &translate_session(simulation.id, &1)
+        &translate_session(&1, simulation.id)
       ),
     }
   end
 
-  defp translate_session(simulation_id, %Db.Session{} = session) do
+  defp translate_session(%Db.Session{} = session, simulation_id) do
     %Session{
       id: session.id,
       simulation_id: simulation_id,

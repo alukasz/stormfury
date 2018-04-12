@@ -5,6 +5,7 @@ defmodule Storm.SimulationServerTest do
   import Storm.SimulationHelper
 
   alias Storm.Simulation
+  alias Storm.Session
   alias Storm.Simulation.SimulationServer
   alias Storm.Mock
 
@@ -41,6 +42,34 @@ defmodule Storm.SimulationServerTest do
     end
   end
 
+  describe "handle_call {:get_sesion, id}" do
+    setup :default_session
+    setup :insert_simulation
+
+    test "replies with range of ids to start", %{simulation: simulation,
+                                                 session: %{id: session_id}} do
+      simulation = %{simulation | dispatcher_pid: :dispatcher_pid}
+      pid = make_ref()
+
+      assert {:reply, session, state} =
+        SimulationServer.handle_call({:get_session, session_id}, {pid, :ref}, simulation)
+
+      assert pid in state.launchers_pids
+      assert %Session{id: ^session_id, dispatcher_pid: :dispatcher_pid} = session
+    end
+  end
+
+  describe "handle_call :set_dispatcher" do
+    test "sets callers pid as dispatcher_pid", %{simulation: simulation} do
+      pid = make_ref()
+
+      assert {:reply, :ok, state} =
+        SimulationServer.handle_call(:set_dispatcher, {pid, :ref}, simulation)
+
+      assert %{dispatcher_pid: ^pid} = state
+    end
+  end
+
   describe "handle_call {:get_ids, number}" do
     setup :insert_simulation
 
@@ -62,6 +91,7 @@ defmodule Storm.SimulationServerTest do
   end
 
   describe "handle_info(:initialize, _)" do
+    setup :insert_simulation
     setup do
       stub Mock.Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
 
@@ -91,7 +121,7 @@ defmodule Storm.SimulationServerTest do
 
   describe "handle_info(:perform, _)" do
     setup %{simulation: simulation} do
-      {:ok, simulation: %{simulation | duration: 0, sessions_pids: [self()]}}
+      {:ok, simulation: %{simulation | duration: 0, launchers_pids: [self()]}}
     end
 
     test "sends message to cleanup simulation", %{simulation: simulation} do

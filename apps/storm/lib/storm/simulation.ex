@@ -9,9 +9,9 @@ defmodule Storm.Simulation do
     :transport_mod,
     sessions: [],
     clients_started: 0,
-    sessions_pids: [],
     dispatcher_pid: nil,
     supervisor_pid: nil,
+    launchers_pids: [],
     state: :ready,
   ]
 

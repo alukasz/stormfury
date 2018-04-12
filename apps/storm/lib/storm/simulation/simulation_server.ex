@@ -3,155 +3,106 @@ defmodule Storm.Simulation.SimulationServer do
 
   alias Storm.Launcher
   alias Storm.Simulation
+  alias Storm.RemoteSimulation
   alias Storm.Simulation.Persistence
 
   require Logger
-
-  @fury_bridge Application.get_env(:storm, :fury_bridge)
 
   def start_link([simulation_id, _] = opts) do
     GenServer.start_link(__MODULE__, opts, name: name(simulation_id))
   end
 
-  def init([simulation_id, supervisor_pid]) do
-    Logger.metadata(simulation: simulation_id)
-    Logger.info("Starting SimulationServer")
+  defp name(id) do
+    Simulation.name(id)
+  end
 
-    state =
-      simulation_id
-      |> Persistence.get_simulation()
-      |> Map.put(:supervisor_pid, supervisor_pid)
-
-    case state.state do
-      :ready ->
-        Process.send_after(self(), :initialize, :timer.seconds(1))
-
-      :running ->
-        Process.send_after(self(), :perform, :timer.seconds(1))
-        # send(self(), :perform)
-    end
+  def init(opts) do
+    state = fetch_state(opts)
+    do_init(state)
+    Logger.metadata(simulation: state.id)
 
     {:ok, state}
+  end
+
+  defp fetch_state(%{id: id} = state) do
+    %{Persistence.get_simulation(id) |
+      supervisor_pid: state.supervisor_pid,
+      dispatcher_pid: state.dispatcher_pid,
+      launchers_pids: state.launchers_pids
+    }
+  end
+  defp fetch_state([simulation_id, supervisor_pid]) do
+    fetch_state(%Simulation{
+      id: simulation_id,
+      supervisor_pid: supervisor_pid
+    })
+  end
+
+  defp do_init(%{state: :ready}) do
+    Process.send_after(self(), :initialize, 500)
+  end
+  defp do_init(%{state: :running}) do
+    Process.send_after(self(), :perform, 100)
   end
 
   def handle_call(:set_dispatcher, {dispatcher_pid, _}, state) do
     {:reply, :ok, %{state | dispatcher_pid: dispatcher_pid}}
   end
-  def handle_call({:get_session, session_id}, {session_pid, _}, state) do
-    %{dispatcher_pid: dispatcher_pid, sessions_pids: sessions_pids} = state
+  def handle_call({:get_session, session_id}, {pid, _}, state) do
     session =
-      state
-      |> fetch_state()
-      |> find_session(session_id)
-      |> Map.put(:dispatcher_pid, dispatcher_pid)
+      session_id
+      |> Persistence.get_session(state.id)
+      |> Map.put(:dispatcher_pid, state.dispatcher_pid)
 
-    {:reply, session, %{state | sessions_pids: [session_pid | sessions_pids]}}
+    {:reply, session, add_session_pid(state, pid)}
   end
-  def handle_call({:get_ids, number}, _, %{clients_started: started} = state) do
+  def handle_call({:get_ids, number}, _, state) do
+    {ids, state} = get_ids(state, number)
+    Persistence.update_simulation(
+      state.id,
+      clients_started: state.clients_started
+    )
+
+    {:reply, ids, state}
+  end
+
+  def handle_info(:initialize, %{id: id} = state) do
+    RemoteSimulation.start(state)
+    Persistence.update_simulation(id, state: :running)
+    send(self(), :perform)
+
+    {:noreply, %{state | state: :running}}
+  end
+  def handle_info(:perform, %{duration: duration} = state) do
+    Logger.info("Starting simulation")
+    Process.send_after(self(), :cleanup, :timer.seconds(duration))
+    turn_launchers(state)
+
+    {:noreply, state}
+  end
+  def handle_info(:cleanup, %{id: id} = state) do
+    Logger.info("Simulation finished, terminating")
+    Persistence.update_simulation(id, state: :finished)
+    RemoteSimulation.terminate(state)
+    spawn fn ->
+      Simulation.terminate(state.supervisor_pid)
+    end
+
+    {:noreply, state}
+  end
+
+  defp add_session_pid(state, pid) do
+    Map.update(state, :launchers_pids, [], fn pids -> [pid | pids] end)
+  end
+
+  defp get_ids(%{clients_started: started} = state, number) do
     new_started = started + number
     ids = (started + 1)..new_started
-    Persistence.update_simulation(state.id, clients_started: new_started)
 
-    {:reply, ids, %{state| clients_started: new_started}}
+    {ids, %{state | clients_started: new_started}}
   end
 
-  defp find_session(%{sessions: sessions}, session_id) do
-    Enum.find sessions, fn
-      %{id: ^session_id} -> true
-      _ -> false
-    end
-  end
-
-  def handle_info(:initialize, simulation) do
-    create_group(simulation)
-    start_remote_simulations(simulation)
-    send(self(), :perform)
-    Persistence.update_simulation(simulation.id, state: :running)
-
-    {:noreply, %{simulation | state: :running}}
-  end
-  def handle_info(:perform, %{duration: duration} = simulation) do
-    Logger.info("Starting simulation")
-    timeout = :timer.seconds(duration)
-    Process.send_after(self(), :cleanup, timeout)
-    turn_launchers(simulation)
-
-    {:noreply, simulation}
-  end
-  def handle_info(:cleanup, simulation) do
-    Logger.info("Simulation finished, terminating")
-    stop_remote_simulations(simulation)
-    stop_simulation(simulation)
-
-    {:noreply, simulation}
-  end
-
-  defp fetch_state(state) do
-    new_state = Persistence.get_simulation(state.id)
-
-    %{new_state | supervisor_pid: state.supervisor_pid,
-      sessions_pids: state.sessions_pids}
-  end
-
-  defp create_group(%{id: id}) do
-    :pg2.create(Fury.group(id))
-  end
-
-  defp get_group_members(%{id: id}) do
-    :pg2.get_members(Fury.group(id))
-  end
-
-  defp start_remote_simulations(simulation) do
-    simulation
-    |> translate_simulation()
-    |> @fury_bridge.start_simulation()
-    |> report_failed_nodes()
-  end
-
-  defp report_failed_nodes({success, failed}) do
-    Enum.each success, fn
-      {node, {:error, reason}} ->
-        Logger.error("Failed to start simulation on node #{inspect node}, reason: #{inspect reason}")
-
-      _ ->
-        :ok
-    end
-
-    case failed do
-      [] ->
-        :ok
-
-      nodes ->
-        Logger.error("Failed to start simulations on nodes #{inspect nodes}")
-    end
-  end
-
-  defp stop_remote_simulations(simulation) do
-    simulation
-    |> get_group_members()
-    |> Enum.map(&GenServer.call(&1, :terminate))
-  end
-
-  defp stop_simulation(%{supervisor_pid: pid}) do
-    Simulation.terminate(pid)
-  end
-
-  defp translate_simulation(%{sessions: sessions} = simulation) do
-    data = Map.from_struct(simulation)
-    simulation = struct(Fury.Simulation, data)
-    %{simulation | sessions: Enum.map(sessions, &translate_session/1)}
-  end
-
-  defp translate_session(session) do
-    data = Map.from_struct(session)
-    struct(Fury.Session, data)
-  end
-
-  defp turn_launchers(%{sessions_pids: pids}) do
+  defp turn_launchers(%{launchers_pids: pids}) do
     Enum.each(pids, &Launcher.perform/1)
-  end
-
-  defp name(id) do
-    Simulation.name(id)
   end
 end
