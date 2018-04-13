@@ -3,7 +3,7 @@ defmodule Fury.Client.ClientFSM do
 
   alias Fury.Client
   alias Fury.Session
-  alias Storm.DSL.Util
+  alias Fury.DSL.Util
   alias Fury.Client.ClientSupervisor
 
   def start_link(%Client{} = client) do

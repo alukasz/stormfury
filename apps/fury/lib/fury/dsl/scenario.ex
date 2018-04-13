@@ -1,6 +1,6 @@
-defmodule Storm.DSL.Scenario do
-  alias Storm.DSL.AST
-  alias Storm.DSL.Util
+defmodule Fury.DSL.Scenario do
+  alias Fury.DSL.AST
+  alias Fury.DSL.Util
 
   def build(ast) do
     scenario = ast

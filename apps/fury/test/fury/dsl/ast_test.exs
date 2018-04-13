@@ -1,7 +1,7 @@
-defmodule Storm.DSL.ASTTest do
+defmodule Fury.DSL.ASTTest do
   use ExUnit.Case, async: true
 
-  alias Storm.DSL.AST
+  alias Fury.DSL.AST
 
   describe "build/1" do
     test "returns AST of given DSL" do

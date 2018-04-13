@@ -1,6 +1,6 @@
-defmodule Storm.DSL.AST do
-  alias Storm.DSL.Lexer
-  alias Storm.DSL.Parser
+defmodule Fury.DSL.AST do
+  alias Fury.DSL.Lexer
+  alias Fury.DSL.Parser
 
   def build(dsl) do
     with {:ok, tokens} <- Lexer.tokenize(dsl) do

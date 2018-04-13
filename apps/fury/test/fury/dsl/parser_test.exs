@@ -1,7 +1,7 @@
-defmodule Storm.DSL.ParserTest do
+defmodule Fury.DSL.ParserTest do
   use ExUnit.Case, async: true
 
-  alias Storm.DSL.Parser
+  alias Fury.DSL.Parser
 
   describe "list" do
     test "empty list" do

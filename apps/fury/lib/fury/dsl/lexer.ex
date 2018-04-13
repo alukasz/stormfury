@@ -1,5 +1,5 @@
-defmodule Storm.DSL.Lexer do
-  @lexer :storm_dsl_lexer
+defmodule Fury.DSL.Lexer do
+  @lexer :fury_dsl_lexer
 
   def tokenize(dsl) when is_binary(dsl) do
     dsl

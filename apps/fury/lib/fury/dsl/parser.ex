@@ -1,5 +1,5 @@
-defmodule Storm.DSL.Parser do
-  @parser :storm_dsl_parser
+defmodule Fury.DSL.Parser do
+  @parser :fury_dsl_parser
 
   def parse([]) do
     {:error, :no_tokens}

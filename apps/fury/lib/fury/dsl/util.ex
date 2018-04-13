@@ -1,4 +1,4 @@
-defmodule Storm.DSL.Util do
+defmodule Fury.DSL.Util do
   def replace_vars(data, assigns) when is_binary(data) do
     Enum.reduce assigns, data, fn {var, value}, data ->
       String.replace(data, var_placeholder(var), to_string(value))

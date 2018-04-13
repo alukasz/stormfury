@@ -60,7 +60,7 @@ defmodule Fury.Session.SessionServer do
   end
 
   def parse_scenario(%{scenario: scenario} = state) do
-    {:ok, requests} = Storm.DSL.parse(scenario)
+    {:ok, requests} = Fury.DSL.parse(scenario)
 
     %{state | requests_cache: build_cache(requests)}
   end

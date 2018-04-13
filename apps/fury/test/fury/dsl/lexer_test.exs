@@ -1,7 +1,7 @@
-defmodule Storm.DSL.LexerTest do
+defmodule Fury.DSL.LexerTest do
   use ExUnit.Case, async: true
 
-  alias Storm.DSL.Lexer
+  alias Fury.DSL.Lexer
 
   @reserved_words [
     :push, :think, :do, :end, :for, :in, :true, :false, :null

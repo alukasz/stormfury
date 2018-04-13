@@ -1,7 +1,7 @@
-defmodule Storm.DSL.ScenarioTest do
+defmodule Fury.DSL.ScenarioTest do
   use ExUnit.Case, async: true
 
-  alias Storm.DSL.Scenario
+  alias Fury.DSL.Scenario
 
   describe "build/1" do
     test "builds push" do

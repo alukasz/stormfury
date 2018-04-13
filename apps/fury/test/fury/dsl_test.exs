@@ -1,7 +1,7 @@
-defmodule Storm.DSLTest do
+defmodule Fury.DSLTest do
   use ExUnit.Case, async: true
 
-  alias Storm.DSL
+  alias Fury.DSL
 
   describe "parse/1" do
     test "transform expressions" do

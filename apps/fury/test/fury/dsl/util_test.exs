@@ -1,7 +1,7 @@
-defmodule Storm.DSL.UtilTest do
+defmodule Fury.DSL.UtilTest do
   use ExUnit.Case, async: true
 
-  alias Storm.DSL.Util
+  alias Fury.DSL.Util
 
   describe "replace_var/2" do
     test "replaces placeholders for variable with value" do
