@@ -12,13 +12,13 @@ defmodule Storm.RemoteSimulationTest do
 
   describe "start/1" do
     test "invokes FuryBridge", %{simulation: simulation} do
-      expect Mock.Fury, :start_simulation, fn _ -> {[], []} end
+      expect Mock.Fury, :start_simulation, fn _, _ -> {[], []} end
 
       RemoteSimulation.start(simulation)
     end
 
     test "creates pg2 group", %{simulation: simulation} do
-      stub Mock.Fury, :start_simulation, fn _ -> {[], []} end
+      stub Mock.Fury, :start_simulation, fn _, _ -> {[], []} end
 
       RemoteSimulation.start(simulation)
 
@@ -30,7 +30,7 @@ defmodule Storm.RemoteSimulationTest do
       reason = :not_remote_enough
       node = :bad@node
       error = {node, {:error, reason}}
-      stub Mock.Fury, :start_simulation, fn _ -> {[error], []} end
+      stub Mock.Fury, :start_simulation, fn _, _ -> {[error], []} end
 
       logs = capture_log(fn -> RemoteSimulation.start(simulation) end)
 
@@ -41,7 +41,7 @@ defmodule Storm.RemoteSimulationTest do
     test "logs error when failed to connect to node",
       %{simulation: simulation} do
       node = :bad@node
-      stub Mock.Fury, :start_simulation, fn _ -> {[], [node]} end
+      stub Mock.Fury, :start_simulation, fn _, _ -> {[], [node]} end
 
       logs = capture_log(fn -> RemoteSimulation.start(simulation) end)
 

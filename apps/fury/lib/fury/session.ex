@@ -1,8 +1,14 @@
 defmodule Fury.Session do
   defstruct [
     :id,
-    :scenario,
     :simulation_id,
+    :url,
+    :protocol_mod,
+    :transport_mod,
+    :scenario,
+    :supervisor_pid,
+    :clients_sup_pid,
+    :clients_sup_ref,
     requests: []
   ]
 
@@ -11,7 +17,7 @@ defmodule Fury.Session do
   end
 
   def start_clients(session_id, client_ids) do
-    GenServer.call(name(session_id), {:start_clients, client_ids})
+    GenServer.cast(name(session_id), {:start_clients, client_ids})
   end
 
   def name(session_id) do

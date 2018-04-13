@@ -11,14 +11,14 @@ defmodule Fury.Server do
     {:ok, %{}}
   end
 
-  def handle_call({:start_simulation, %Simulation{} = simulation}, _, state) do
-    create_group(simulation)
-    result = Simulation.start(simulation)
+  def handle_call({:start_simulation, simulation_id, sessions}, _, state) do
+    create_group(simulation_id)
+    result = Simulation.start(simulation_id, sessions)
 
     {:reply, result, state}
   end
 
-  defp create_group(%{id: id}) do
+  defp create_group(id) do
     :pg2.create(Fury.group(id))
   end
 end

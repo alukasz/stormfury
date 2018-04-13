@@ -7,7 +7,7 @@ defmodule Fury.Application do
     children = [
       Fury.RegistrySupervisor,
       Fury.Server,
-      Fury.SimulationsSupervisor
+      Fury.Simulation.SimulationsSupervisor,
     ]
     opts = [
       strategy: :one_for_one,

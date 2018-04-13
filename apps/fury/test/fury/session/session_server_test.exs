@@ -3,10 +3,9 @@ defmodule Fury.Session.SessionServerTest do
 
   import Mox
 
-  alias Fury.Client
   alias Fury.Session
-  alias Fury.Simulation
   alias Fury.Session.SessionServer
+  alias Fury.State
   alias Fury.Mock.Transport
 
   setup do
@@ -15,46 +14,47 @@ defmodule Fury.Session.SessionServerTest do
       id: make_ref(),
       scenario: "think 10",
       simulation_id: simulation_id,
-    }
-    simulation = %Simulation{
-      id: simulation_id,
-      sessions: [session],
       protocol_mod: Fury.Protocol.Noop,
       transport_mod: Fury.Mock.Transport
+    }
+    simulation = %{
+      id: simulation_id,
     }
 
     {:ok, simulation: simulation, session: session, session: session}
   end
 
   describe "start_link/1" do
-    setup :start_config_server
+    setup :start_state_server
+    setup %{session: session} do
+      {:ok, pid} = Supervisor.start_link([], strategy: :one_for_one)
 
-    test "starts new SessionServer",
-        %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
-      {:ok, pid} = SessionServer.start_link(simulation_id, session_id)
+      {:ok, session: %{session | supervisor_pid: pid}}
+    end
 
-      assert [{^pid, _}] = Registry.lookup(Fury.Registry.Session, session_id)
+    test "starts new SessionServer", %{session: session} do
+      {:ok, pid} = SessionServer.start_link(session)
+
+      assert [{^pid, _}] = Registry.lookup(Fury.Registry.Session, session.id)
     end
   end
 
   describe "init/1" do
-    setup :start_config_server
+    test "initializes state", %{session: session} do
+      state = %{session | requests: [{:think, 10}, :done]}
 
-    test "initializes state", %{simulation: %{id: simulation_id},
-                                session: %{id: session_id} = session} do
-      assert SessionServer.init([simulation_id, session_id]) == {:ok, session}
+      assert SessionServer.init(session) == {:ok, state}
     end
 
-    test "sends message to parse scenario",
-      %{simulation: %{id: simulation_id}, session: %{id: session_id}} do
+    test "sends message to start ClientsSupervisor", %{session: session} do
+      SessionServer.init(session)
 
-      SessionServer.init([simulation_id, session_id])
-
-      assert_receive :parse_scenario
+      assert_receive :start_clients_supervisor
     end
   end
 
-  describe "handle_call({:get_request, id}, state)" do
+  describe "handle_call {:get_request, id}" do
+    setup :start_state_server
     setup %{session: session} do
       requests = [{:think, 10}, :done]
 
@@ -72,16 +72,9 @@ defmodule Fury.Session.SessionServerTest do
     end
   end
 
-  describe "handle_info(:parse_scenario, state)" do
-    test "builds requests from scenario", %{session: session} do
-      assert {:noreply, %{requests: [{:think, 10}, :done]}} =
-        SessionServer.handle_info(:parse_scenario, session)
-    end
-  end
-
-  describe "handle_cast({:start_clients, ids}, state)" do
-    setup :start_config_server
-    setup :start_client_supervisor
+  describe "handle_cast {:start_clients, ids}" do
+    setup :start_state_server
+    setup :start_clients_supervisor
     setup :set_mox_global
     setup do
       stub Transport, :connect, fn _, _ -> {:error, :timeout} end
@@ -89,34 +82,34 @@ defmodule Fury.Session.SessionServerTest do
       :ok
     end
 
-    test "starts clients", %{session: session, simulation: %{id: id}} do
-      SessionServer.handle_call({:start_clients, [1, 2]}, :from, session)
+    test "starts clients", %{session: session} do
+      SessionServer.handle_cast({:start_clients, [1, 2]}, session)
 
-      clients =
-        id
-        |> Client.supervisor_name()
-        |> DynamicSupervisor.which_children()
-
+      clients = DynamicSupervisor.which_children(session.clients_sup_pid)
       assert length(clients) == 2
     end
 
     test "does not change state", %{session: session} do
-      msg = {:start_clients, [1, 2]}
+      assert SessionServer.handle_cast({:start_clients, [1, 2]}, session) ==
+        {:noreply, session}
+    end
 
-      assert SessionServer.handle_call(msg, :from, session) ==
-        {:reply, :ok, session}
+    test "adds started ids to State", %{session: session} do
+      SessionServer.handle_cast({:start_clients, [1, 2]}, session)
+
+      assert State.get_ids(session.simulation_id, session.id) == [1, 2]
     end
   end
 
-  defp start_config_server(%{simulation: simulation}) do
-    {:ok, _} = start_supervised({Fury.Simulation.ConfigServer, simulation})
+  defp start_state_server(%{simulation: %{id: id}}) do
+    {:ok, _} = start_supervised({Fury.State.StateServer, id})
 
     :ok
   end
 
-  defp start_client_supervisor(%{simulation: %{id: id}}) do
-    {:ok, _} = start_supervised({Fury.Client.ClientSupervisor, id})
+  defp start_clients_supervisor(%{session: session}) do
+    {:ok, pid} = start_supervised(Fury.Client.ClientsSupervisor)
 
-    :ok
+    {:ok, session: %{session | clients_sup_pid: pid}}
   end
 end

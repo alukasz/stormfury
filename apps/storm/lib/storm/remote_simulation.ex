@@ -4,10 +4,12 @@ defmodule Storm.RemoteSimulation do
   @fury_bridge Application.get_env(:storm, :fury_bridge)
 
   def start(simulation) do
-    simulation
-    |> create_group()
-    |> translate_simulation()
-    |> @fury_bridge.start_simulation()
+    sessions =
+      simulation
+      |> create_group()
+      |> translate_sessions()
+
+    @fury_bridge.start_simulation(simulation.id, sessions)
     |> report_failed_nodes()
   end
 
@@ -27,15 +29,19 @@ defmodule Storm.RemoteSimulation do
     :pg2.get_members(Fury.group(id))
   end
 
-  defp translate_simulation(%{sessions: sessions} = simulation) do
-    data = Map.from_struct(simulation)
-    simulation = struct(Fury.Simulation, data)
-    %{simulation | sessions: Enum.map(sessions, &translate_session/1)}
+  defp translate_sessions(%{sessions: sessions} = simulation) do
+    Enum.map(sessions, &translate_session(&1, simulation))
   end
 
-  defp translate_session(session) do
-    data = Map.from_struct(session)
-    struct(Fury.Session, data)
+  defp translate_session(session, simulation) do
+    %Fury.Session{
+      id: session.id,
+      simulation_id: simulation.id,
+      url: simulation.url,
+      protocol_mod: simulation.protocol_mod,
+      transport_mod: simulation.transport_mod,
+      scenario: session.scenario
+    }
   end
 
   defp report_failed_nodes({success, failed}) do

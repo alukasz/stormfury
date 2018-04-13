@@ -1,31 +1,22 @@
 defmodule Fury.Session.SessionSupervisor do
-  use DynamicSupervisor
+  use Supervisor
 
+  alias Fury.Client.ClientsSupervisor
   alias Fury.Session.SessionServer
 
-  def start_link([simulation_id, sessions]) do
-    {:ok, sup} = DynamicSupervisor.start_link(__MODULE__, simulation_id)
-    start_sessions(sup, sessions)
-
-    {:ok, sup}
+  def start_link(session) do
+    Supervisor.start_link(__MODULE__, session)
   end
 
-  def start_child(supervisor, session_id) do
-    DynamicSupervisor.start_child(supervisor, session_spec(session_id))
+  def start_clients_supervisor(pid) do
+    Supervisor.start_child(pid, ClientsSupervisor)
   end
 
-  def init(simulation_id) do
-    DynamicSupervisor.init(
-      strategy: :one_for_one,
-      extra_arguments: [simulation_id]
-    )
-  end
+  def init(session) do
+    children = [
+      {SessionServer, %{session | supervisor_pid: self()}}
+    ]
 
-  defp start_sessions(pid, sessions) do
-    Enum.each(sessions, &start_child(pid, &1.id))
-  end
-
-  defp session_spec(session_id) do
-    {SessionServer, session_id}
+    Supervisor.init(children, strategy: :rest_for_one)
   end
 end

@@ -6,16 +6,11 @@ defmodule Fury.Client.ClientServer do
   alias Fury.Simulation.Config
   alias Storm.DSL.Util
 
-  def start_link(simulation_id, opts) do
-    GenServer.start_link(__MODULE__, [simulation_id | opts])
+  def start_link(%Client{} = state) do
+    GenServer.start_link(__MODULE__, state)
   end
 
-  def init([simulation_id, session_id, id]) do
-    state = Config.client(simulation_id)
-    state = %{state | id: id,
-              session_id: session_id,
-              simulation_id: simulation_id,
-              protocol_state: state.protocol_mod.init()}
+  def init(state) do
     connect()
 
     {:ok, state}

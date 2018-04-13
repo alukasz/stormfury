@@ -1,39 +1,34 @@
 defmodule Fury.Simulation.SimulationServer do
-  use GenServer, restart: :transient
+  use GenServer
 
   alias Fury.Session
   alias Fury.Simulation
-  alias Fury.Simulation.Config
-  alias Fury.SimulationsSupervisor
+  alias Fury.Simulation.SimulationsSupervisor
 
   require Logger
 
-  def start_link(id) do
-    GenServer.start_link(__MODULE__, id, name: name(id))
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts)
   end
 
-  def init(id) do
+  def init([id, supervisor_pid]) do
     Logger.metadata(simulation: id)
     Logger.info("Starting simulation")
     :pg2.join(Fury.group(id), self())
 
-    {:ok, Config.simulation(id)}
+    {:ok, %{id: id, supervisor_pid: supervisor_pid}}
   end
 
-  def handle_call({:start_clients, session_id, ids}, _, state) do
+  def handle_cast({:start_clients, session_id, ids}, state) do
     Session.start_clients(session_id, ids)
 
-    {:reply, :ok, state}
+    {:noreply, state}
   end
-  def handle_call(:terminate, _, %{supervisor: supervisor} = state) do
+  def handle_call(:terminate, _, %{supervisor_pid: supervisor_pid} = state) do
     Logger.info("Terminating simulation")
     spawn fn ->
-      SimulationsSupervisor.terminate_child(supervisor)
+      SimulationsSupervisor.terminate_child(supervisor_pid)
     end
     {:reply, :ok, state}
-  end
-
-  defp name(id) do
-    Simulation.name(id)
   end
 end

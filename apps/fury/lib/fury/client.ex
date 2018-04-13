@@ -5,6 +5,7 @@ defmodule Fury.Client do
     :id,
     :session_id,
     :simulation_id,
+    :session_pid,
     :url,
     :transport_mod,
     :protocol_mod,

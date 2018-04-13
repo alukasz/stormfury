@@ -1,20 +1,21 @@
 defmodule Fury.Simulation.SimulationSupervisor do
   use Supervisor, restart: :transient
 
-  alias Fury.Simulation
+  alias Fury.Session.SessionsSupervisor
+  alias Fury.Simulation.SimulationServer
+  alias Fury.State.StateServer
 
-  def start_link(%Simulation{} = simulation) do
-    Supervisor.start_link(__MODULE__, simulation)
+  def start_link(opts) do
+    Supervisor.start_link(__MODULE__, opts)
   end
 
-  def init(%Simulation{id: id, sessions: sessions} = simulation) do
+  def init([simulation_id, sessions]) do
     children = [
-      {Fury.Simulation.ConfigServer, %{simulation | supervisor: self()}},
-      {Fury.Simulation.SimulationServer, id},
-      {Fury.Session.SessionSupervisor, [id, sessions]},
-      {Fury.Client.ClientSupervisor, id}
+      {StateServer, simulation_id},
+      {SimulationServer, [simulation_id, self()]},
+      {SessionsSupervisor, sessions}
     ]
 
-    Supervisor.init(children, strategy: :rest_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end

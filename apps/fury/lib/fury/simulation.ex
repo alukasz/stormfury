@@ -1,25 +1,12 @@
 defmodule Fury.Simulation do
   alias Fury.Simulation
-  alias Fury.SimulationsSupervisor
+  alias Fury.Simulation.SimulationsSupervisor
 
-  defstruct [
-    :id,
-    :url,
-    :duration,
-    :protocol_mod,
-    :transport_mod,
-    :supervisor,
-    sessions: []
-  ]
-
-  def start(%Simulation{} = simulation) do
-    SimulationsSupervisor.start_child(simulation)
+  def start(simulation_id, sessions) do
+    SimulationsSupervisor.start_child(simulation_id, sessions)
   end
 
-  def name(%Simulation{id: id}) do
-    {:via, Registry, {Fury.Registry.Simulation, id}}
-  end
-  def name(id) do
-    {:via, Registry, {Fury.Registry.Simulation, id}}
+  def terminate(simulation_sup_pid) do
+    SimulationsSupervisor.terminate_child(simulation_sup_pid)
   end
 end

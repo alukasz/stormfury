@@ -3,22 +3,26 @@ defmodule Fury.Session.SessionServer do
 
   alias Fury.Client
   alias Fury.Session
-  alias Fury.Simulation.Config
+  alias Fury.State
+  alias Fury.Session.SessionSupervisor
+  alias Fury.Client.ClientSupervisor
 
   require Logger
 
-  def start_link(simulation_id, session_id) do
-    opts = [simulation_id, session_id]
-
-    GenServer.start_link(__MODULE__, opts, name: name(session_id))
+  def start_link(%{id: id} = session) do
+    GenServer.start_link(__MODULE__, session, name: name(id))
   end
 
-  def init([simulation_id, session_id]) do
-    Logger.metadata(simulation: simulation_id)
-    Logger.info("Starting session #{inspect session_id}")
+  defp name(id) do
+    Session.name(id)
+  end
 
-    send(self(), :parse_scenario)
-    {:ok, Config.session(simulation_id, session_id)}
+  def init(state) do
+    Logger.metadata(simulation: state.simulation_id)
+    Logger.info("Starting session #{inspect state.id}")
+    send(self(), :start_clients_supervisor)
+
+    {:ok, parse_scenario(state)}
   end
 
   def handle_call({:get_request, id}, _, %{requests: requests} = state) do
@@ -26,27 +30,54 @@ defmodule Fury.Session.SessionServer do
 
     {:reply, request, state}
   end
-  def handle_call({:start_clients, ids}, _from, state) do
+
+  def handle_cast({:start_clients, ids}, state) do
     %{id: session_id, simulation_id: simulation_id} = state
     Logger.debug("Starting #{length(ids)} clients for #{inspect session_id}")
-    start_clients(simulation_id, session_id, ids)
+    start_clients(state, ids)
 
-    {:reply, :ok, state}
+    {:noreply, state}
   end
 
-  def handle_info(:parse_scenario, %{scenario: scenario} = state) do
+  def handle_info(:start_clients_supervisor, state) do
+    {:ok, pid} = SessionSupervisor.start_clients_supervisor(state.supervisor_pid)
+    ref = Process.monitor(pid)
+    case State.get_ids(state.simulation_id, state.id) do
+      [] -> :ok
+      ids -> GenServer.cast(self(), {:start_clients, ids})
+    end
+
+    {:noreply, %{state | clients_sup_pid: pid, clients_sup_ref: ref}}
+  end
+  def handle_info({:DOWN, ref, _, _, _}, %{clients_sup_ref: ref} = state) do
+    send(self(), :start_clients_supervisor)
+
+    {:noreply, %{state | clients_sup_pid: nil, clients_sup_ref: nil}}
+  end
+
+  def parse_scenario(%{scenario: scenario} = state) do
     {:ok, requests} = Storm.DSL.parse(scenario)
 
-    {:noreply, %{state | requests: requests ++ [:done]}}
+    %{state | requests: requests ++ [:done]}
   end
 
-  defp start_clients(simulation_id, session_id, ids) do
+  defp start_clients(%{clients_sup_pid: pid} = state, ids) do
+    State.add_ids(state.simulation_id, state.id, ids)
     Enum.each ids, fn id ->
-      {:ok, _} = Client.start(simulation_id, session_id, id)
+      state = client_state(state, id)
+      {:ok, _} = ClientSupervisor.start_child(pid, state)
     end
   end
 
-  defp name(id) do
-    Session.name(id)
+  defp client_state(session, id) do
+    %Client{
+      id: id,
+      session_id: session.id,
+      simulation_id: session.simulation_id,
+      session_pid: self(),
+      url: session.url,
+      protocol_mod: session.protocol_mod,
+      transport_mod: session.transport_mod,
+    }
   end
 end

@@ -4,8 +4,8 @@ defmodule Storm.SimulationServerTest do
   import Mox
   import Storm.SimulationHelper
 
-  alias Storm.Simulation
   alias Storm.Session
+  alias Storm.Simulation
   alias Storm.Simulation.SimulationServer
   alias Storm.Mock
 
@@ -93,7 +93,7 @@ defmodule Storm.SimulationServerTest do
   describe "handle_info :initialize" do
     setup :insert_simulation
     setup do
-      stub Mock.Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
+      stub Mock.Fury, :start_simulation, fn _, _ -> {[{:node, :ok}], []} end
 
       :ok
     end
@@ -111,7 +111,7 @@ defmodule Storm.SimulationServerTest do
     end
 
     test "starts remote simulations", %{simulation: simulation} do
-      expect Mock.Fury, :start_simulation, fn _ -> {[{:node, :ok}], []} end
+      expect Mock.Fury, :start_simulation, fn _, _ -> {[{:node, :ok}], []} end
 
       SimulationServer.handle_info(:initialize, simulation)
 
