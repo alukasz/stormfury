@@ -1,11 +1,11 @@
 defmodule Fury.Transport.WebSocket do
-  @behaviour Fury.Transport
+  use Fury.Transport
 
   alias Fury.Transport.WebSocketServer
 
   @impl true
-  def connect(url, opts \\ []) when is_binary(url) do
-    WebSocketServer.start_link(url, opts)
+  def connect(opts) do
+    WebSocketServer.start_link(opts)
   end
 
   @impl true

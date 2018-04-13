@@ -4,18 +4,13 @@ defmodule Fury.Transport.WebSocketTest do
   alias Fury.Transport.WebSocket
 
   test "connect/2 connects to server", %{ws_url: url, port: port} do
-    assert {:ok, _} = WebSocket.connect(url, client: self())
+    assert {:ok, _} = WebSocket.connect(url: url, client: self())
 
     assert_receive {:web_socket_server, ^port, :connected}
   end
 
-  test "connect/2 returns error tuple on timeout" do
-    assert {:error, :timeout} =
-      WebSocket.connect("ws://localhost", client: self(), timeout: 10)
-  end
-
   test "connect/2 returns error tuple on invalid url" do
-    assert {:error, _} = WebSocket.connect("invalid", client: self())
+    assert {:error, _} = WebSocket.connect(url: "invalid", client: self())
   end
 
   test "push/2 pushes message to server", %{ws_url: url, port: port} do
@@ -34,7 +29,24 @@ defmodule Fury.Transport.WebSocketTest do
     assert_receive {:web_socket_server, ^port, {:terminated, :remote}}
   end
 
+  test "implements child_spec/1" do
+    child_spec = %{
+      id: WebSocket,
+      start: {WebSocket, :connect, [:arg]},
+      shutdown: 500,
+      type: :worker,
+      restart: :temporary
+    }
+
+    assert WebSocket.child_spec(:arg) == child_spec
+  end
+
   defp connect(url) do
-    {:ok, _} = WebSocket.connect(url, client: self())
+    {:ok, pid} = WebSocket.connect(url: url, client: self())
+    receive do
+      :transport_connected -> {:ok, pid}
+    after 100 ->
+        flunk("WebSocket haven't connected")
+    end
   end
 end

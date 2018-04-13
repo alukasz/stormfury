@@ -22,10 +22,8 @@ defmodule Fury.Transport.WebSocketServerTest do
   end
 
   describe "ondisconnect/2" do
-    test "sends message to client", %{state: state} do
-      WebSocketServer.ondisconnect(:reason, state)
-
-      assert_received {:transport_disconnected, :reason}
+    test "closes websocket_client", %{state: state} do
+      assert {:close, :normal, _} = WebSocketServer.ondisconnect(:reason, state)
     end
   end
 
