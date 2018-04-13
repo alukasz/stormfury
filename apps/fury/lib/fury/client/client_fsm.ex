@@ -34,7 +34,9 @@ defmodule Fury.Client.ClientFSM do
     {:keep_state_and_data, [{:state_timeout, 1000, :connect}]}
   end
   def handle_event(:enter, _, :connected, _) do
-    {:keep_state_and_data, make_request()}
+    make_request()
+
+    :keep_state_and_data
   end
   def handle_event(:state_timeout, :connect, _, client) do
     case start_transport(client) do
@@ -61,10 +63,10 @@ defmodule Fury.Client.ClientFSM do
                                    transport_ref: nil,
                                    request: 0}}
   end
-  def handle_event(:timeout, :make_request, :disconnected, _) do
+  def handle_event(:info, :make_request, :disconnected, _) do
     :keep_state_and_data
   end
-  def handle_event(:timeout, :make_request, :connected, client) do
+  def handle_event(:info, :make_request, :connected, client) do
     %{request: request_id, session_id: session_id} = client
 
     case Session.get_request(session_id, request_id) do
@@ -75,14 +77,15 @@ defmodule Fury.Client.ClientFSM do
         :keep_state_and_data
 
       {:think, time} ->
-        {:keep_state, %{client | request: request_id + 1}, make_request(time)}
+        make_request(time)
+        {:keep_state, %{client | request: request_id + 1}}
 
       request ->
         protocol_state = do_make_request(request, client)
         client = %{client | protocol_state: protocol_state,
                   request: request_id + 1}
-
-        {:keep_state, client, make_request()}
+        make_request()
+        {:keep_state, client}
     end
   end
 
@@ -118,7 +121,10 @@ defmodule Fury.Client.ClientFSM do
     put_elem(request, 1, payload)
   end
 
-  defp make_request(time \\ 0) do
-    [{:timeout, :timer.seconds(time), :make_request}]
+  defp make_request do
+    send(self(), :make_request)
+  end
+  defp make_request(time) do
+    Process.send_after(self(), :make_request, :timer.seconds(time))
   end
 end

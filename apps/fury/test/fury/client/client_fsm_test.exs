@@ -77,15 +77,16 @@ defmodule Fury.Client.ClientFSMTest do
   describe "handle_event(:enter, _, :connected, _)" do
     test "keeps state and data", %{client: client} do
       for_all_states fn state ->
-        assert {:keep_state_and_data, _} =
+        assert :keep_state_and_data =
           ClientFSM.handle_event(:enter, state, :connected, client)
       end
     end
 
-    test "sets timeout to make request", %{client: client} do
+    test "sends message to make request", %{client: client} do
       for_all_states fn state ->
-        assert {_, [{:timeout, 0, :make_request}]} =
-          ClientFSM.handle_event(:enter, state, :connected, client)
+        ClientFSM.handle_event(:enter, state, :connected, client)
+
+        assert_receive :make_request
       end
     end
   end
@@ -136,7 +137,6 @@ defmodule Fury.Client.ClientFSMTest do
     end
   end
 
-
   describe "handle_event(:info, :DOWN, _, _)" do
     setup %{client: client} do
       ref = make_ref()
@@ -161,23 +161,23 @@ defmodule Fury.Client.ClientFSMTest do
     end
   end
 
-  describe "handle_event(:timeout, :make_request, :disconnected, _)" do
+  describe "handle_event(:info, :make_request, :disconnected, _)" do
     test "does not invoke protocol or transport", %{client: client} do
       stub Protocol, :format, fn _, _ -> send(self(), :protocol_invoked) end
       stub Transport, :push, fn _, _ -> send(self(), :transport_invoked) end
 
-      ClientFSM.handle_event(:timeout, :make_request, :disconnected, client)
+      ClientFSM.handle_event(:info, :make_request, :disconnected, client)
 
       refute_receive _
     end
 
     test "keeps state and data", %{client: client} do
       assert :keep_state_and_data =
-        ClientFSM.handle_event(:timeout, :make_request, :disconnected, client)
+        ClientFSM.handle_event(:info, :make_request, :disconnected, client)
     end
   end
 
-  describe "handle_event(:timeout, :make_request, :connected, _)" do
+  describe "handle_event(:info, :make_request, :connected, _)" do
     setup :start_state_server
     setup %{client: client} do
       {:ok, client: %{client | transport: self()}}
@@ -188,8 +188,8 @@ defmodule Fury.Client.ClientFSMTest do
       start_session_server(context, "think 10")
       expected_request_id = client.request + 1
 
-      assert {:keep_state, %{request: ^expected_request_id}, _} =
-        ClientFSM.handle_event(:timeout, :make_request, :connected, client)
+      assert {:keep_state, %{request: ^expected_request_id}} =
+        ClientFSM.handle_event(:info, :make_request, :connected, client)
     end
 
     test "updates state.protocol_state", %{client: client} = context do
@@ -197,10 +197,9 @@ defmodule Fury.Client.ClientFSMTest do
       stub Protocol, :format, fn _, _ -> {:ok, "data", :updated_state} end
       stub Transport, :push, fn _, _ -> :ok end
 
-      assert {:keep_state, %{protocol_state: :updated_state}, _} =
-        ClientFSM.handle_event(:timeout, :make_request, :connected, client)
+      assert {:keep_state, %{protocol_state: :updated_state}} =
+        ClientFSM.handle_event(:info, :make_request, :connected, client)
     end
-
 
     test "does not make request on {:think, time}",
         %{client: client} = context do
@@ -208,19 +207,9 @@ defmodule Fury.Client.ClientFSMTest do
       stub Protocol, :format, fn _, _ -> send(self(), :protocol_called) end
       stub Transport, :push, fn _, _ -> send(self(), :tranport_called) end
 
-      ClientFSM.handle_event(:timeout, :make_request, :connected, client)
+      ClientFSM.handle_event(:info, :make_request, :connected, client)
 
       refute_receive _
-    end
-
-    test "sets timeout to time seconds on {:think, time}",
-        %{client: client} = context do
-      start_session_server(context, "think 10")
-
-      ClientFSM.handle_event(:timeout, :make_request, :connected, client)
-
-      assert {:keep_state, _, [{:timeout, 10_000, :make_request}]} =
-        ClientFSM.handle_event(:timeout, :make_request, :connected, client)
     end
 
     test "on :done keeps state and data", %{client: client} = context do
@@ -228,23 +217,24 @@ defmodule Fury.Client.ClientFSMTest do
       client = %{client | request: 1}
 
       assert :keep_state_and_data =
-        ClientFSM.handle_event(:timeout, :make_request, :connected, client)
+        ClientFSM.handle_event(:info, :make_request, :connected, client)
     end
 
-    test "sets timeout to make next request", %{client: client} = context do
+    test "sends message to make next request", %{client: client} = context do
       start_session_server(context, "push \"data\"")
       stub Protocol, :format, fn _, _ -> {:ok, "data", %{}} end
       stub Transport, :push, fn _, _ -> :ok end
 
-      assert {:keep_state, _, [{:timeout, 0, :make_request}]} =
-        ClientFSM.handle_event(:timeout, :make_request, :connected, client)
+      ClientFSM.handle_event(:info, :make_request, :connected, client)
+
+      assert_receive :make_request
     end
 
     test "when request not found unmodified state", %{client: client} = context do
       start_session_server(context, "push \"data\"")
       client = %{client | request: 1_000}
 
-      assert ClientFSM.handle_event(:timeout, :make_request, :connected, client) ==
+      assert ClientFSM.handle_event(:info, :make_request, :connected, client) ==
         :keep_state_and_data
     end
 
@@ -253,7 +243,7 @@ defmodule Fury.Client.ClientFSMTest do
       expect Protocol, :format, fn {:push, "data"}, _ -> {:ok, "data", %{}} end
       expect Transport, :push, fn _, "data" -> :ok end
 
-      ClientFSM.handle_event(:timeout, :make_request, :connected, client)
+      ClientFSM.handle_event(:info, :make_request, :connected, client)
 
       verify!()
     end
