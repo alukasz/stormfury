@@ -17,7 +17,7 @@ defmodule Fury.State.StateServer do
 
   def handle_cast({:add_ids, session_id, ids}, state) do
     state = Map.update state, session_id, ids, fn old_ids ->
-      ids ++ old_ids
+      Enum.uniq(ids ++ old_ids)
     end
 
     {:noreply, state}

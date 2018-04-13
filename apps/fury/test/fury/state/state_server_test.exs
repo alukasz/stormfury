@@ -42,5 +42,12 @@ defmodule Fury.State.StateServerTest do
       assert {:noreply, %{session_id: [3, 4, 1, 2]}} =
         StateServer.handle_cast(request, %{session_id: [1, 2]})
     end
+
+    test "does not add duplicated ids" do
+      request = {:add_ids, :session_id, [1, 2]}
+
+      assert {:noreply, %{session_id: [1, 2]}} =
+        StateServer.handle_cast(request, %{session_id: [1, 2]})
+    end
   end
 end
