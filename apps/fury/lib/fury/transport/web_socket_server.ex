@@ -22,7 +22,7 @@ defmodule Fury.Transport.WebSocketServer do
     {:ok, state, @keepalive}
   end
 
-  def ondisconnect(reason, state) do
+  def ondisconnect(_, state) do
     {:close, :normal, state}
   end
 

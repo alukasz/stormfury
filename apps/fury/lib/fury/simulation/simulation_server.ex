@@ -2,7 +2,6 @@ defmodule Fury.Simulation.SimulationServer do
   use GenServer
 
   alias Fury.Session
-  alias Fury.Simulation
   alias Fury.Simulation.SimulationsSupervisor
 
   require Logger

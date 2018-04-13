@@ -77,7 +77,7 @@ defmodule Fury.Session.SessionServerTest do
     setup :start_clients_supervisor
     setup :set_mox_global
     setup do
-      stub Transport, :connect, fn _, _ -> {:error, :timeout} end
+      stub Transport, :connect, fn _ -> {:error, :timeout} end
 
       :ok
     end

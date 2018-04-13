@@ -1,5 +1,4 @@
 defmodule Fury.Simulation do
-  alias Fury.Simulation
   alias Fury.Simulation.SimulationsSupervisor
 
   def start(simulation_id, sessions) do

@@ -5,7 +5,7 @@ defmodule Fury.Session.SessionServer do
   alias Fury.Session
   alias Fury.State
   alias Fury.Session.SessionSupervisor
-  alias Fury.Client.ClientSupervisor
+  alias Fury.Client.ClientsSupervisor
 
   require Logger
 
@@ -31,8 +31,7 @@ defmodule Fury.Session.SessionServer do
     {:reply, request, state}
   end
 
-  def handle_cast({:start_clients, ids}, state) do
-    %{id: session_id, simulation_id: simulation_id} = state
+  def handle_cast({:start_clients, ids}, %{id: session_id} = state) do
     Logger.debug("Starting #{length(ids)} clients for #{inspect session_id}")
     start_clients(state, ids)
 
@@ -62,11 +61,11 @@ defmodule Fury.Session.SessionServer do
   end
 
   defp start_clients(%{clients_sup_pid: pid} = state, ids) do
-    State.add_ids(state.simulation_id, state.id, ids)
     Enum.each ids, fn id ->
       state = client_state(state, id)
-      {:ok, _} = ClientSupervisor.start_child(pid, state)
+      {:ok, _} = ClientsSupervisor.start_child(pid, state)
     end
+    State.add_ids(state.simulation_id, state.id, ids)
   end
 
   defp client_state(session, id) do

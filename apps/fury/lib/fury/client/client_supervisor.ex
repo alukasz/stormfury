@@ -1,28 +1,23 @@
 defmodule Fury.Client.ClientSupervisor do
-  use DynamicSupervisor
+  use Supervisor
 
-  alias Fury.Client
-  alias Fury.Client.ClientServer
+  alias Fury.Client.ClientFSM
 
-  def start_link(_) do
-    DynamicSupervisor.start_link(__MODULE__, [])
+  def start_link(client) do
+    Supervisor.start_link(__MODULE__, client)
   end
 
-  def start_child(supervisor, state) do
-    child_spec = client_spec(state)
+  def start_transport(supervisor, transport_mod, opts) do
+    child_spec = {transport_mod, opts}
 
-    DynamicSupervisor.start_child(supervisor, child_spec)
+    Supervisor.start_child(supervisor, child_spec)
   end
 
-  def init(_) do
-    DynamicSupervisor.init( strategy: :one_for_one)
-  end
+  def init(client) do
+    children = [
+      {ClientFSM, %{client | supervisor_pid: self()}}
+    ]
 
-  defp name(simulation_id) do
-    Client.supervisor_name(simulation_id)
-  end
-
-  defp client_spec(state) do
-    {ClientServer, state}
+    Supervisor.init(children, strategy: :rest_for_one)
   end
 end
