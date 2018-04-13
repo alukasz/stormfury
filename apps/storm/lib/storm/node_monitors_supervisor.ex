@@ -1,4 +1,4 @@
-defmodule Storm.NodeMonitorSupervisor do
+defmodule Storm.NodeMonitorsSupervisor do
   use DynamicSupervisor
 
   alias Storm.NodeMonitor

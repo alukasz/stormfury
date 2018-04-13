@@ -1,4 +1,4 @@
-defmodule Storm.Launcher.LauncherSupervisor do
+defmodule Storm.Launcher.LaunchersSupervisor do
   use DynamicSupervisor
 
   alias Storm.Launcher.LauncherServer

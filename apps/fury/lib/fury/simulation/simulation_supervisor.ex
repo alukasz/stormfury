@@ -1,5 +1,5 @@
 defmodule Fury.Simulation.SimulationSupervisor do
-  use Supervisor, restart: :transient
+  use Supervisor
 
   alias Fury.Session.SessionsSupervisor
   alias Fury.Simulation.SimulationServer

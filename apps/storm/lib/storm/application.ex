@@ -8,7 +8,7 @@ defmodule Storm.Application do
   def start(_type, _args) do
     children = [
       Storm.RegistrySupervisor,
-      {Storm.NodeMonitorSupervisor, @nodes},
+      {Storm.NodeMonitorsSupervisor, @nodes},
       Storm.SimulationsSupervisor
     ]
     opts = [
