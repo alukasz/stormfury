@@ -1,6 +1,6 @@
-defmodule Fury.Session.Cache do
+defmodule Fury.Cache do
   def new(name) when is_atom(name) do
-    opts = [:set, :named_table, :protected, read_concurrency: true]
+    opts = [:set, :private, read_concurrency: true]
 
     :ets.new(name, opts)
   end

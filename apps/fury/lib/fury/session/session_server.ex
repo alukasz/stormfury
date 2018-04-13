@@ -4,6 +4,7 @@ defmodule Fury.Session.SessionServer do
   alias Fury.Client
   alias Fury.Session
   alias Fury.State
+  alias Fury.Cache
   alias Fury.Session.SessionSupervisor
   alias Fury.Client.ClientsSupervisor
 
@@ -25,8 +26,12 @@ defmodule Fury.Session.SessionServer do
     {:ok, parse_scenario(state)}
   end
 
-  def handle_call({:get_request, id}, _, %{requests: requests} = state) do
-    request = Enum.at(requests, id, :error)
+  def handle_call({:get_request, id}, _, %{requests_cache: cache} = state) do
+    request =
+      case Cache.get(cache, id) do
+        {:ok, request} -> request
+        error -> error
+      end
 
     {:reply, request, state}
   end
@@ -57,7 +62,19 @@ defmodule Fury.Session.SessionServer do
   def parse_scenario(%{scenario: scenario} = state) do
     {:ok, requests} = Storm.DSL.parse(scenario)
 
-    %{state | requests: requests ++ [:done]}
+    %{state | requests_cache: build_cache(requests)}
+  end
+
+  defp build_cache(requests) do
+    cache = Cache.new(:requests_cache)
+    requests
+    |> Kernel.++([:done])
+    |> Enum.with_index()
+    |> Enum.each(fn {request, id} ->
+      Cache.put(cache, id, request)
+    end)
+
+    cache
   end
 
   defp start_clients(%{clients_sup_pid: pid} = state, ids) do

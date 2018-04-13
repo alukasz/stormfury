@@ -5,6 +5,7 @@ defmodule Fury.Session.SessionServerTest do
 
   alias Fury.Session
   alias Fury.Session.SessionServer
+  alias Fury.Cache
   alias Fury.State
   alias Fury.Mock.Transport
 
@@ -40,10 +41,16 @@ defmodule Fury.Session.SessionServerTest do
   end
 
   describe "init/1" do
-    test "initializes state", %{session: session} do
-      state = %{session | requests: [{:think, 10}, :done]}
+    test "builds requests cache", %{session: session} do
+      assert {:ok, %{requests_cache: cache}} = SessionServer.init(session)
 
-      assert SessionServer.init(session) == {:ok, state}
+      assert Cache.get(cache, 0) == {:ok, {:think, 10}}
+    end
+
+    test "appends requests list with :done", %{session: session} do
+      assert {:ok, %{requests_cache: cache}} = SessionServer.init(session)
+
+      assert Cache.get(cache, 1) == {:ok, :done}
     end
 
     test "sends message to start ClientsSupervisor", %{session: session} do
@@ -56,9 +63,11 @@ defmodule Fury.Session.SessionServerTest do
   describe "handle_call {:get_request, id}" do
     setup :start_state_server
     setup %{session: session} do
-      requests = [{:think, 10}, :done]
+      cache = Cache.new(:requests_cache)
+      Cache.put(cache, 0, {:think, 10})
+      Cache.put(cache, 1, :done)
 
-      {:ok, session: %{session | requests: requests}}
+      {:ok, session: %{session | requests_cache: cache}}
     end
 
     test "replies with request", %{session: session} do

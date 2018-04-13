@@ -104,9 +104,9 @@ defmodule Fury.Client.ClientFSM do
     %{id: id, transport_mod: transport_mod, transport: transport,
       protocol_mod: protocol_mod, protocol_state: protocol_state} = client
 
-    request = put_client_id(request, id)
-    with {:ok, request, new_protocol_state} <- protocol_mod.format(request, protocol_state),
-          :ok <- transport_mod.push(transport, request) do
+    with request = put_client_id(request, id),
+         {:ok, request, new_protocol_state} <- protocol_mod.format(request, protocol_state),
+         :ok <- transport_mod.push(transport, request) do
       new_protocol_state
     else
       _ -> protocol_state

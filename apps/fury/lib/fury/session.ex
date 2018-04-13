@@ -9,7 +9,7 @@ defmodule Fury.Session do
     :supervisor_pid,
     :clients_sup_pid,
     :clients_sup_ref,
-    requests: []
+    :requests_cache,
   ]
 
   def get_request(session_id, id) do

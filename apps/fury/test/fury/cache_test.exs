@@ -1,7 +1,7 @@
-defmodule Fury.Session.CacheTest do
+defmodule Fury.CacheTest do
   use ExUnit.Case, async: true
 
-  alias Fury.Session.Cache
+  alias Fury.Cache
 
   describe "new/1" do
     test "creates new cache storage" do
