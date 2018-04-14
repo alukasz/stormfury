@@ -1,6 +1,7 @@
 defmodule Fury.Simulation.SimulationSupervisor do
-  use Supervisor
+  use Supervisor, restart: :temporary
 
+  alias Fury.Metrics
   alias Fury.Session.SessionsSupervisor
   alias Fury.Simulation.SimulationServer
   alias Fury.State.StateServer
@@ -10,6 +11,8 @@ defmodule Fury.Simulation.SimulationSupervisor do
   end
 
   def init([simulation_id, sessions]) do
+    sessions = create_metrics(sessions)
+
     children = [
       {StateServer, simulation_id},
       {SimulationServer, [simulation_id, self()]},
@@ -17,5 +20,11 @@ defmodule Fury.Simulation.SimulationSupervisor do
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
+  end
+
+  defp create_metrics(sessions) do
+    metrics_ref = Metrics.new()
+
+    Enum.map(sessions, &Map.put(&1, :metrics_ref, metrics_ref))
   end
 end
