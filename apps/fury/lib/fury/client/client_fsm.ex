@@ -3,6 +3,7 @@ defmodule Fury.Client.ClientFSM do
 
   alias Fury.Client
   alias Fury.Session
+  alias Fury.Metrics
   alias Fury.DSL.Util
   alias Fury.Client.ClientSupervisor
 
@@ -20,7 +21,9 @@ defmodule Fury.Client.ClientFSM do
     }
   end
 
-  def init(%{protocol_mod: protocol_mod} = client) do
+  def init(%{protocol_mod: protocol_mod, metrics_ref: ref} = client) do
+    Metrics.incr(ref, :clients)
+
     protocol_state = protocol_mod.init()
 
     {:ok, :disconnected, %{client | protocol_state: protocol_state}}
@@ -48,10 +51,13 @@ defmodule Fury.Client.ClientFSM do
         {:next_state, :disconnected, client}
     end
   end
-  def handle_event(:info, :transport_connected, _, client) do
+  def handle_event(:info, :transport_connected, _, %{metrics_ref: ref} = client) do
+    Metrics.incr(ref, :clients_connected)
+
     {:next_state, :connected, client}
   end
-  def handle_event(:info, {:transport_data, data}, _, client) do
+  def handle_event(:info, {:transport_data, data}, _, %{metrics_ref: ref} = client) do
+    Metrics.incr(ref, :messages_received)
     %{protocol_mod: protocol_mod, protocol_state: protocol_state} = client
 
     {:ok, protocol_state} = protocol_mod.handle_data(data, protocol_state)
@@ -59,6 +65,8 @@ defmodule Fury.Client.ClientFSM do
     {:keep_state, %{client | protocol_state: protocol_state}}
   end
   def handle_event(:info, {:DOWN, ref, _, _, _}, _, %{transport_ref: ref} = client) do
+    Metrics.decr(client.metrics_ref, :clients_connected)
+
     {:next_state, :disconnected, %{client | transport: nil,
                                    transport_ref: nil,
                                    request: 0}}
@@ -84,12 +92,15 @@ defmodule Fury.Client.ClientFSM do
         protocol_state = do_make_request(request, client)
         client = %{client | protocol_state: protocol_state,
                   request: request_id + 1}
+        Metrics.incr(client.metrics_ref, :messages_sent)
         make_request()
         {:keep_state, client}
     end
   end
 
-  def terminate(_reason, _state, _data) do
+  def terminate(_reason, _state, %{metrics_ref: ref}) do
+    Metrics.decr(ref, :clients)
+
     :ok
   end
 

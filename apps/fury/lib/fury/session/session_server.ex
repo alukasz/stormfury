@@ -94,6 +94,7 @@ defmodule Fury.Session.SessionServer do
       url: session.url,
       protocol_mod: session.protocol_mod,
       transport_mod: session.transport_mod,
+      metrics_ref: session.metrics_ref
     }
   end
 end

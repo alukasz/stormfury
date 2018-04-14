@@ -5,6 +5,7 @@ defmodule Fury.Client.ClientFSMTest do
 
   alias Fury.Client
   alias Fury.Session
+  alias Fury.Metrics
   alias Fury.Client.ClientFSM
   alias Fury.Session.SessionServer
   alias Fury.Mock.{Protocol, Transport}
@@ -13,6 +14,7 @@ defmodule Fury.Client.ClientFSMTest do
 
   describe "start_link/1" do
     setup :set_mox_global
+    setup :metrics
     setup do
       stub Protocol, :init, fn -> %{} end
 
@@ -27,6 +29,7 @@ defmodule Fury.Client.ClientFSMTest do
   end
 
   describe "init/1" do
+    setup :metrics
     setup do
       stub Protocol, :init, fn -> %{} end
 
@@ -44,6 +47,12 @@ defmodule Fury.Client.ClientFSMTest do
 
     test "sets initial state to :disconnected", %{client: client} do
       assert {_, :disconnected, _} = ClientFSM.init(client)
+    end
+
+    test "increases :clients metric", %{client: client, metrics_ref: ref} do
+      ClientFSM.init(client)
+
+      assert {:clients, 1} in Metrics.get(ref)
     end
   end
 
@@ -91,17 +100,28 @@ defmodule Fury.Client.ClientFSMTest do
     end
   end
 
-
   describe "handle_event(:info, :transport_connected, _, _)" do
+    setup :metrics
+
     test "switches state to :connected", %{client: client} do
       for_all_states fn state ->
         assert {:next_state, :connected, ^client} =
           ClientFSM.handle_event(:info, :transport_connected, state, client)
       end
     end
+
+    test "increases :connected metric", %{client: client, metrics_ref: ref} do
+      for_all_states fn state ->
+        ClientFSM.handle_event(:info, :transport_connected, state, client)
+      end
+
+      assert {:clients_connected, 2} in Metrics.get(ref)
+    end
   end
 
   describe "handle_event(:info, {:transport_data, data}, _, _)" do
+    setup :metrics
+
     test "invokes protocol to handle data", %{client: client} do
       expect Protocol, :handle_data, 2, fn "data", %{} ->
         {:ok, :updated_state}
@@ -135,9 +155,22 @@ defmodule Fury.Client.ClientFSMTest do
           ClientFSM.handle_event(:info, {:transport_data, "data"}, state, client)
       end
     end
+
+    test "increases :messages_received metric", %{client: client, metrics_ref: ref} do
+      stub Protocol, :handle_data, fn "data", %{} ->
+        {:ok, :updated_state}
+      end
+
+      for_all_states fn state ->
+        ClientFSM.handle_event(:info, {:transport_data, "data"}, state, client)
+      end
+
+      assert {:messages_received, 2} in Metrics.get(ref)
+    end
   end
 
   describe "handle_event(:info, :DOWN, _, _)" do
+    setup :metrics
     setup %{client: client} do
       ref = make_ref()
       down_tuple = {:DOWN, ref, :a, :b, :c}
@@ -159,6 +192,16 @@ defmodule Fury.Client.ClientFSMTest do
           ClientFSM.handle_event(:info, down_tuple, state, client)
       end
     end
+
+
+    test "decreases :connected metric", %{client: client, metrics_ref: ref,
+                                          down_tuple: down_tuple} do
+      for_all_states fn state ->
+        ClientFSM.handle_event(:info, down_tuple, state, client)
+      end
+
+      assert {:clients_connected, -2} in Metrics.get(ref)
+    end
   end
 
   describe "handle_event(:info, :make_request, :disconnected, _)" do
@@ -179,6 +222,7 @@ defmodule Fury.Client.ClientFSMTest do
 
   describe "handle_event(:info, :make_request, :connected, _)" do
     setup :start_state_server
+    setup :metrics
     setup %{client: client} do
       {:ok, client: %{client | transport: self()}}
     end
@@ -247,12 +291,40 @@ defmodule Fury.Client.ClientFSMTest do
 
       verify!()
     end
+
+    test "when making request increases :messages_sent metric",
+        %{client: client, metrics_ref: ref} = context do
+      start_session_server(context, "push \"data\"")
+      stub Protocol, :format, fn _, _ -> {:ok, "data", %{}} end
+      stub Transport, :push, fn _, _ -> :ok end
+
+      ClientFSM.handle_event(:info, :make_request, :connected, client)
+
+      assert {:messages_sent, 1} in Metrics.get(ref)
+    end
+
+    test "on {:think, time} doesn't increase :messages_sent metric",
+        %{client: client, metrics_ref: ref} = context do
+      start_session_server(context, "think 10")
+
+      ClientFSM.handle_event(:info, :make_request, :connected, client)
+
+      refute {:messages_sent, 1} in Metrics.get(ref)
+    end
+  end
+
+  describe "terminate/2" do
+    setup :metrics
+    test "decreases :clients metric", %{client: client, metrics_ref: ref} do
+      ClientFSM.terminate(:reason, :state, client)
+
+      assert {:clients, -1} in Metrics.get(ref)
+    end
   end
 
   def for_all_states(fun) do
     Enum.each([:connected, :disconnected], fun)
   end
-
 
   defp default_structs(_) do
     simulation_id = make_ref()
@@ -286,5 +358,11 @@ defmodule Fury.Client.ClientFSMTest do
     {:ok, _} = start_supervised({SessionServer, session})
 
     :ok
+  end
+
+  def metrics(%{client: client}) do
+    ref = Metrics.new()
+
+    {:ok, client: %{client | metrics_ref: ref}, metrics_ref: ref}
   end
 end

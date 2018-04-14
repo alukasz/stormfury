@@ -7,6 +7,7 @@ defmodule Fury.Session.SessionServerTest do
   alias Fury.Session.SessionServer
   alias Fury.Cache
   alias Fury.State
+  alias Fury.Metrics
   alias Fury.Mock.Transport
 
   setup do
@@ -85,10 +86,11 @@ defmodule Fury.Session.SessionServerTest do
     setup :start_state_server
     setup :start_clients_supervisor
     setup :set_mox_global
-    setup do
+    setup %{session: session} do
       stub Transport, :connect, fn _ -> {:error, :timeout} end
+      ref = Metrics.new()
 
-      :ok
+      {:ok, session: %{session | metrics_ref: ref}}
     end
 
     test "starts clients", %{session: session} do

@@ -10,7 +10,8 @@ defmodule Fury.Client do
     :protocol_mod,
     :protocol_state,
     :supervisor_pid,
+    :metrics_ref,
+    :transport,
     request: 0,
-    transport: :not_connected
   ]
 end
