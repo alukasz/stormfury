@@ -1,13 +1,23 @@
 defmodule Fury.Simulation.SimulationServerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
+
+  import Mox
 
   alias Fury.Simulation.SimulationServer
+  alias Fury.Mock.Storm
 
   setup do
     {:ok, id: make_ref()}
   end
 
   describe "start_link/1" do
+    setup :set_mox_global
+    setup do
+      stub Storm, :send_metrics, fn _, _ -> :ok end
+
+      :ok
+    end
+
     test "starts new SimulationServer", %{id: id} do
       assert {:ok, pid} = SimulationServer.start_link([id, self()])
       assert is_pid(pid)

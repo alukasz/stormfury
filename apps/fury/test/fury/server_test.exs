@@ -1,9 +1,15 @@
 defmodule Fury.ServerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
+
+  import Mox
 
   alias Fury.Server
+  alias Fury.Mock.Storm
 
+  setup :set_mox_global
   setup do
+    stub Storm, :send_metrics, fn _, _ -> :ok end
+
     {:ok, id: make_ref()}
   end
 
