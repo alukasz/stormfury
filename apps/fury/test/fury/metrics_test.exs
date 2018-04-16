@@ -15,32 +15,43 @@ defmodule Fury.MetricsTest do
     end
   end
 
-  describe "incr/2" do
-    test "increases counter by 1", %{ref: ref} do
-      assert Metrics.incr(ref, :counter) == 1
-
-      assert :ets.lookup(ref, :counter) == [counter: 1]
-    end
-  end
-
-  describe "decr/2" do
-    test "returns ref to ETS table", %{ref: ref} do
-      assert Metrics.decr(ref, :counter) == -1
-
-      assert :ets.lookup(ref, :counter) == [counter: -1]
-    end
-  end
-
-  describe "get/1" do
+  describe "increasing counters" do
     setup %{ref: ref} do
-      for _ <- 1..5, do: Metrics.incr(ref, :a)
-      for _ <- 1..10, do: Metrics.incr(ref, :b)
+      for _ <- 1..2, do: Metrics.incr(ref, :id, :clients)
+      for _ <- 1..3, do: Metrics.incr(ref, :id, :clients_connected)
+      for _ <- 1..4, do: Metrics.incr(ref, :id, :messages_sent)
+      for _ <- 1..5, do: Metrics.incr(ref, :id, :messages_received)
 
       :ok
     end
 
-    test "returns all keys with values", %{ref: ref} do
-      assert Enum.sort(Metrics.get(ref)) == [a: 5, b: 10]
+    test "counters are updated", %{ref: ref} do
+      metrics = Metrics.get(ref)
+
+      assert {:clients, 2} in metrics
+      assert {:clients_connected, 3} in metrics
+      assert {:messages_sent, 4} in metrics
+      assert {:messages_received, 5} in metrics
+    end
+  end
+
+  describe "decreasing counters" do
+    setup %{ref: ref} do
+      for _ <- 1..2, do: Metrics.decr(ref, :id, :clients)
+      for _ <- 1..3, do: Metrics.decr(ref, :id, :clients_connected)
+      for _ <- 1..4, do: Metrics.decr(ref, :id, :messages_sent)
+      for _ <- 1..5, do: Metrics.decr(ref, :id, :messages_received)
+
+      :ok
+    end
+
+    test "counters are updated", %{ref: ref} do
+      metrics = Metrics.get(ref)
+
+      assert {:clients, -2} in metrics
+      assert {:clients_connected, -3} in metrics
+      assert {:messages_sent, -4} in metrics
+      assert {:messages_received, -5} in metrics
     end
   end
 end

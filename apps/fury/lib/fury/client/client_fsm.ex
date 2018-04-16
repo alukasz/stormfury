@@ -21,8 +21,9 @@ defmodule Fury.Client.ClientFSM do
     }
   end
 
-  def init(%{protocol_mod: protocol_mod, metrics_ref: ref} = client) do
-    Metrics.incr(ref, :clients)
+  def init(%{protocol_mod: protocol_mod, metrics_ref: ref, id: id} = client) do
+    # Process.flag(:trap_exit, true)
+    Metrics.incr(ref, id, :clients)
 
     protocol_state = protocol_mod.init()
 
@@ -51,21 +52,21 @@ defmodule Fury.Client.ClientFSM do
         {:next_state, :disconnected, client}
     end
   end
-  def handle_event(:info, :transport_connected, _, %{metrics_ref: ref} = client) do
-    Metrics.incr(ref, :clients_connected)
+  def handle_event(:info, :transport_connected, _, %{metrics_ref: ref, id: id} = client) do
+    Metrics.incr(ref, id, :clients_connected)
 
     {:next_state, :connected, client}
   end
-  def handle_event(:info, {:transport_data, data}, _, %{metrics_ref: ref} = client) do
-    Metrics.incr(ref, :messages_received)
+  def handle_event(:info, {:transport_data, data}, _, %{metrics_ref: ref, id: id} = client) do
+    Metrics.incr(ref, id, :messages_received)
     %{protocol_mod: protocol_mod, protocol_state: protocol_state} = client
 
     {:ok, protocol_state} = protocol_mod.handle_data(data, protocol_state)
 
     {:keep_state, %{client | protocol_state: protocol_state}}
   end
-  def handle_event(:info, {:DOWN, ref, _, _, _}, _, %{transport_ref: ref} = client) do
-    Metrics.decr(client.metrics_ref, :clients_connected)
+  def handle_event(:info, {:DOWN, ref, _, _, _}, _, %{transport_ref: ref, id: id} = client) do
+    Metrics.decr(client.metrics_ref, id, :clients_connected)
 
     {:next_state, :disconnected, %{client | transport: nil,
                                    transport_ref: nil,
@@ -75,7 +76,7 @@ defmodule Fury.Client.ClientFSM do
     :keep_state_and_data
   end
   def handle_event(:info, :make_request, :connected, client) do
-    %{request: request_id, session_id: session_id} = client
+    %{request: request_id, session_id: session_id, id: id} = client
 
     case Session.get_request(session_id, request_id) do
       :error ->
@@ -92,14 +93,14 @@ defmodule Fury.Client.ClientFSM do
         protocol_state = do_make_request(request, client)
         client = %{client | protocol_state: protocol_state,
                   request: request_id + 1}
-        Metrics.incr(client.metrics_ref, :messages_sent)
+        Metrics.incr(client.metrics_ref, id, :messages_sent)
         make_request()
         {:keep_state, client}
     end
   end
 
-  def terminate(_reason, _state, %{metrics_ref: ref}) do
-    Metrics.decr(ref, :clients)
+  def terminate(_reason, _state, %{metrics_ref: ref, id: id}) do
+    Metrics.decr(ref, id,:clients)
 
     :ok
   end
