@@ -9,7 +9,8 @@ defmodule Mix.Tasks.Db.Schema.Create do
     with :ok <- create_schema(),
          :ok <- :mnesia.start(),
          {:atomic, :ok} <- create_table(Db.Simulation),
-         {:atomic, :ok} <- create_table(Db.Session) do
+         {:atomic, :ok} <- create_table(Db.Session),
+         {:atomic, :ok} <- create_table(Db.NodeMetrics) do
       Mix.shell.info("Created mnesia schema and tables")
     else
       {:error, reason} ->

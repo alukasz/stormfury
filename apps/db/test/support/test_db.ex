@@ -2,7 +2,8 @@ defmodule Db.TestDb do
   @tables [
     Db.TestStruct,
     Db.Simulation,
-    Db.Session
+    Db.Session,
+    Db.NodeMetrics
   ]
 
   def create do
