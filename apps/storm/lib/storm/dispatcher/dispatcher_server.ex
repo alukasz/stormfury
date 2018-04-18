@@ -38,7 +38,10 @@ defmodule Storm.Dispatcher.DispatcherServer do
 
     case get_remote_pids(simulation_id) do
       [] ->
-        Logger.warn("No remote simulations running, #{length(clients)} clients to dispatch")
+        Logger.warn fn ->
+          "No remote simulations running, #{length(clients)} clients to dispatch"
+        end
+
         {:noreply, state}
 
       pids ->

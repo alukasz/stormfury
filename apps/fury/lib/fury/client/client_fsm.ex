@@ -104,7 +104,7 @@ defmodule Fury.Client.ClientFSM do
   end
 
   def terminate(_reason, _state, %{metrics_ref: ref, id: id}) do
-    Metrics.decr(ref, id,:clients)
+    Metrics.decr(ref, id, :clients)
 
     :ok
   end

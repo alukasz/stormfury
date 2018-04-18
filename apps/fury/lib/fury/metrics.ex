@@ -34,13 +34,6 @@ defmodule Fury.Metrics do
     end
   end)
 
-  defp do_incr(ref, id, pos) do
-  end
-
-  defp do_decr(ref, id, pos) do
-    :ets.update_counter(ref, id, {pos, -1}, @default_value)
-  end
-
   def get(ref) do
     ref
     |> :ets.match_object(:"$1")

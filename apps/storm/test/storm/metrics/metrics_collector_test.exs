@@ -7,7 +7,7 @@ defmodule Storm.Metrics.MetricsCollectorTest do
 
   describe "init/1" do
     test "initializes state" do
-      assert MetricsCollector.init(:simulation_id) =={:ok, :simulation_id}
+      assert MetricsCollector.init(:simulation_id) == {:ok, :simulation_id}
     end
   end
 
