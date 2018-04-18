@@ -185,22 +185,30 @@ defmodule Fury.Client.ClientFSMTest do
       end
     end
 
-    test "switches state to :disconnected", %{down_tuple: down_tuple,
-                                              client: client} do
-      for_all_states fn state ->
-        assert {:next_state, :disconnected, _} =
-          ClientFSM.handle_event(:info, down_tuple, state, client)
-      end
+    test "when connected switches state to :disconnected",
+        %{down_tuple: down_tuple, client: client} do
+      assert {:next_state, :disconnected, _} =
+        ClientFSM.handle_event(:info, down_tuple, :connected, client)
     end
 
+    test "when disconnected repeats state",
+        %{down_tuple: down_tuple, client: client} do
+      assert {:repeat_state, :disconnected, _} =
+        ClientFSM.handle_event(:info, down_tuple, :disconnected, client)
+    end
 
-    test "decreases :connected metric", %{client: client, metrics_ref: ref,
-                                          down_tuple: down_tuple} do
-      for_all_states fn state ->
-        ClientFSM.handle_event(:info, down_tuple, state, client)
-      end
+    test "when connected decreases :clients_connected metric",
+        %{client: client, metrics_ref: ref, down_tuple: down_tuple} do
+      ClientFSM.handle_event(:info, down_tuple, :connected, client)
 
-      assert {:clients_connected, -2} in Metrics.get(ref)
+      assert {:clients_connected, -1} in Metrics.get(ref)
+    end
+
+    test "does not change clients_connected metric when disconnected",
+        %{client: client, metrics_ref: ref, down_tuple: down_tuple} do
+      ClientFSM.handle_event(:info, down_tuple, :disconnected, client)
+
+      assert {:clients_connected, 0} in Metrics.get(ref)
     end
   end
 

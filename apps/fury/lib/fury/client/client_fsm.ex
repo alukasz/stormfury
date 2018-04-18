@@ -65,12 +65,16 @@ defmodule Fury.Client.ClientFSM do
 
     {:keep_state, %{client | protocol_state: protocol_state}}
   end
-  def handle_event(:info, {:DOWN, ref, _, _, _}, _, %{transport_ref: ref, id: id} = client) do
+
+  def handle_event(:info, {:DOWN, ref, _, _, _}, :connected,
+      %{transport_ref: ref, id: id} = client) do
     Metrics.decr(client.metrics_ref, id, :clients_connected)
 
-    {:next_state, :disconnected, %{client | transport: nil,
-                                   transport_ref: nil,
-                                   request: 0}}
+    {:next_state, :disconnected, reset_transport(client)}
+  end
+  def handle_event(:info, {:DOWN, ref, _, _, _}, _,
+      %{transport_ref: ref} = client) do
+    {:repeat_state, :disconnected, reset_transport(client)}
   end
   def handle_event(:info, :make_request, :disconnected, _) do
     :keep_state_and_data
@@ -113,6 +117,10 @@ defmodule Fury.Client.ClientFSM do
     opts = [url: url, client: self()]
 
     ClientSupervisor.start_transport(pid, mod, opts)
+  end
+
+  defp reset_transport(client) do
+    %{client | transport: nil, transport_ref: nil, request: 0}
   end
 
   defp do_make_request(request, client) do
