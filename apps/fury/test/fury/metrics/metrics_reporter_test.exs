@@ -1,5 +1,5 @@
 defmodule Fury.Metrics.MetricsReporterTest do
-  use ExUnit.Case, async: true
+  use Db.MnesiaCase
 
   alias Fury.Metrics
   alias Fury.Metrics.MetricsReporter

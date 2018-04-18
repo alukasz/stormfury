@@ -5,6 +5,7 @@ defmodule Storm.Simulation.SimulationSupervisor do
   alias Storm.Simulation.Persistence
   alias Storm.Simulation.SimulationServer
   alias Storm.Dispatcher.DispatcherSupervisor
+  alias Storm.Metrics.MetricsCollector
 
   def start_link(simulation_id) do
     Supervisor.start_link(__MODULE__, simulation_id)
@@ -23,6 +24,7 @@ defmodule Storm.Simulation.SimulationSupervisor do
   defp start_simulation(id, sessions) do
     children = [
       {SimulationServer, [id, self()]},
+      {MetricsCollector, id},
       {DispatcherSupervisor, [id, sessions]},
     ]
 

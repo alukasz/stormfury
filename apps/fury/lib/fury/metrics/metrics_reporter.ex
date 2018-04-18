@@ -25,8 +25,9 @@ defmodule Fury.Metrics.MetricsReporter do
 
   defp update_node_metrics(simulation_id, metrics_ref) do
     metrics = Metrics.get(metrics_ref)
-    node_metrics = struct(NodeMetrics, [{:id, {simulation_id, node()}} | metrics])
-    NodeMetrics.insert(node_metrics)
+    attrs = Keyword.put(metrics, :id, {simulation_id, node()})
+    node_metrics = struct(NodeMetrics, attrs)
+    :ok = NodeMetrics.insert(node_metrics)
   end
 
   defp schedule_report do

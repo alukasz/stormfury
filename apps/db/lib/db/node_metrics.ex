@@ -1,6 +1,7 @@
 defmodule Db.NodeMetrics do
   alias Db.NodeMetrics
   alias Db.Repo
+  alias Db.Util
 
   defstruct [
     :id, # a tuple of {simulation_id, node}
@@ -10,7 +11,13 @@ defmodule Db.NodeMetrics do
     :messages_received
   ]
 
-  def insert(%NodeMetrics{} = node_metrics) do
+  def insert(%NodeMetrics{id: {_, _}} = node_metrics) do
     Repo.insert(node_metrics)
+  end
+
+  def get_by_simulation_id(simulation_id) do
+    %NodeMetrics{}
+    |> Util.match_spec(:id, {simulation_id, :_})
+    |> Repo.match()
   end
 end
