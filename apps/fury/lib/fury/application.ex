@@ -10,7 +10,7 @@ defmodule Fury.Application do
       Fury.Simulation.SimulationsSupervisor,
     ]
     opts = [
-      strategy: :one_for_one,
+      strategy: :rest_for_one,
       name: Fury.Supervisor
     ]
 
