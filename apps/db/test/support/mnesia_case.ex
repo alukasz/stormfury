@@ -13,6 +13,8 @@ defmodule Db.MnesiaCase do
     :mnesia.clear_table(Db.TestStruct)
     :mnesia.clear_table(Db.Simulation)
     :mnesia.clear_table(Db.Session)
+    :mnesia.clear_table(Db.Metrics)
+    :mnesia.clear_table(Db.NodeMetrics)
 
     :ok
   end
