@@ -3,7 +3,8 @@ defmodule Db.TestDb do
     Db.TestStruct,
     Db.Simulation,
     Db.Session,
-    Db.NodeMetrics
+    Db.NodeMetrics,
+    Db.Metrics
   ]
 
   def create do

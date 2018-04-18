@@ -10,6 +10,7 @@ defmodule Mix.Tasks.Db.Schema.Create do
          :ok <- :mnesia.start(),
          {:atomic, :ok} <- create_table(Db.Simulation),
          {:atomic, :ok} <- create_table(Db.Session),
+         {:atomic, :ok} <- create_table(Db.Metrics),
          {:atomic, :ok} <- create_table(Db.NodeMetrics) do
       Mix.shell.info("Created mnesia schema and tables")
     else
@@ -26,6 +27,8 @@ defmodule Mix.Tasks.Db.Schema.Create do
   end
 
   defp create_table(struct_mod) do
+    Mix.shell.info("Creating table #{struct_mod}")
+
     struct_mod
     |> struct()
     |> Table.create_from_struct(disc_copies: [node()])
