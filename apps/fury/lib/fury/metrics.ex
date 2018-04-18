@@ -5,9 +5,7 @@ defmodule Fury.Metrics do
     :messages_sent,
     :messages_received
   ]
-
   @shards 100
-
   @default_value List.to_tuple([:id] ++ List.duplicate(0, length(@counters)))
 
   def new do

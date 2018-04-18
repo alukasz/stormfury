@@ -1,11 +1,8 @@
 defmodule Fury.Metrics.MetricsReporterTest do
   use ExUnit.Case, async: true
 
-  import Mox
-
   alias Fury.Metrics
   alias Fury.Metrics.MetricsReporter
-  alias Fury.Mock.Storm
 
   describe "init/1" do
     test "initializes state" do
@@ -23,17 +20,31 @@ defmodule Fury.Metrics.MetricsReporterTest do
   describe "handle_info :report" do
     setup do
       ref = Metrics.new()
+      populate_metrics(ref)
       state = %{simulation_id: :simulation_id, metrics_ref: ref}
 
       {:ok, state: state}
     end
 
-    test "sends metrics data to Storm", %{state: state} do
-      expect Storm, :send_metrics, fn _, _ -> :ok end
+    test "inserts metrics data to NodeMetrics table", %{state: state} do
+      id = {state.simulation_id, node()}
+      expected = %Db.NodeMetrics{id: id, clients: 1, clients_connected: 2,
+                                 messages_received: 3, messages_sent: 4}
 
       MetricsReporter.handle_info(:report, state)
 
-      verify!()
+      assert Db.Repo.get(Db.NodeMetrics, id) == expected
+    end
+
+    defp populate_metrics(ref) do
+      metrics = [clients: 1, clients_connected: 2, messages_received: 3,
+                 messages_sent: 4]
+
+      for {metric, times} <- metrics do
+        for _ <- 1..times do
+          Metrics.incr(ref, 1, metric)
+        end
+      end
     end
   end
 end

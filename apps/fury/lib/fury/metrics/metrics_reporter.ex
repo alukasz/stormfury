@@ -2,9 +2,9 @@ defmodule Fury.Metrics.MetricsReporter do
   use GenServer
 
   alias Fury.Metrics
+  alias Db.NodeMetrics
 
   @interval :timer.seconds(1)
-  @storm_bridge Application.get_env(:fury, :storm_bridge)
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
@@ -18,10 +18,15 @@ defmodule Fury.Metrics.MetricsReporter do
 
   def handle_info(:report, %{simulation_id: id, metrics_ref: ref} = state) do
     schedule_report()
-    metrics = Metrics.get(ref)
-    @storm_bridge.send_metrics(id, metrics)
+    update_node_metrics(id, ref)
 
     {:noreply, state}
+  end
+
+  defp update_node_metrics(simulation_id, metrics_ref) do
+    metrics = Metrics.get(metrics_ref)
+    node_metrics = struct(NodeMetrics, [{:id, {simulation_id, node()}} | metrics])
+    NodeMetrics.insert(node_metrics)
   end
 
   defp schedule_report do
