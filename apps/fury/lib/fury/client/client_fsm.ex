@@ -16,13 +16,12 @@ defmodule Fury.Client.ClientFSM do
       id: __MODULE__,
       start: {__MODULE__, :start_link, [opts]},
       type: :worker,
-      restart: :permanent,
+      restart: :transient,
       shutdown: 500
     }
   end
 
   def init(%{protocol_mod: protocol_mod, metrics_ref: ref, id: id} = client) do
-    # Process.flag(:trap_exit, true)
     Metrics.incr(ref, id, :clients)
 
     protocol_state = protocol_mod.init()

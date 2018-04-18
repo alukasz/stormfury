@@ -1,5 +1,5 @@
 defmodule Fury.Client.ClientSupervisor do
-  use Supervisor
+  use Supervisor, restart: :temporary
 
   alias Fury.Client.ClientFSM
 
