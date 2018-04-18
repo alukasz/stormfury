@@ -29,6 +29,7 @@ defmodule Fury.MixProject do
   defp deps do
     [
       {:cowboy, "~> 2.2"},
+      {:db, in_umbrella: true},
       {:poison, "~> 3.1"},
       {:mox, "~> 0.3", only: :test},
       {:websocket_client, github: "sanmiguel/websocket_client", tag: "1.3.0"}

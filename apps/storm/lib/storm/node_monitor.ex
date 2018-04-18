@@ -26,6 +26,7 @@ defmodule Storm.NodeMonitor do
   end
   def handle_info({:nodeup, node}, node) do
     Logger.info("Connection to #{node} established.")
+    join_mnesia_cluster(node)
 
     {:noreply, node}
   end
@@ -48,5 +49,9 @@ defmodule Storm.NodeMonitor do
 
   defp name(node) do
     Module.concat(__MODULE__, node)
+  end
+
+  defp join_mnesia_cluster(node) do
+    :mnesia.change_config(:extra_db_nodes, [node])
   end
 end
