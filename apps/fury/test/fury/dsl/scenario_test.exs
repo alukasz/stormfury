@@ -12,6 +12,17 @@ defmodule Fury.DSL.ScenarioTest do
       assert Scenario.build([think: [10]]) == {:ok, [think: 10]}
     end
 
+    test "builds PhoenixChannels push" do
+      assert Scenario.build([{{:push, "topic"}, ["data"]}]) ==
+        {:ok, [{{:push, "topic"}, "data"}]}
+    end
+
+
+    test "builds PhoenixChannels join" do
+      assert Scenario.build([{{:join, "topic"}, ["data"]}]) ==
+        {:ok, [{{:join, "topic"}, "data"}]}
+    end
+
     test "expands loop" do
       ast = [
         for: [

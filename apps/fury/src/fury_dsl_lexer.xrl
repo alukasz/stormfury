@@ -40,6 +40,7 @@ strip(TokenChars, TokenLen) ->
     lists:sublist(TokenChars, 2, TokenLen - 2).
 
 reserved_word("push") -> true;
+reserved_word("join") -> true;
 reserved_word("think") -> true;
 reserved_word("do") -> true;
 reserved_word("end") -> true;

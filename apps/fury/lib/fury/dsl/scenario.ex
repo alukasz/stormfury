@@ -32,6 +32,12 @@ defmodule Fury.DSL.Scenario do
   defp transform_expr({:push, [data]}, assigns) do
     {:push, Util.replace_vars(data, assigns)}
   end
+  defp transform_expr({{:join, topic}, [data]}, assigns) do
+    {{:join, topic}, Util.replace_vars(data, assigns)}
+  end
+  defp transform_expr({{:push, topic, event}, [data]}, assigns) do
+    {{:push, topic, event}, Util.replace_vars(data, assigns)}
+  end
   defp transform_expr({:for, [in_expr, block]}, assigns) do
     {var, range} = transform_expr(in_expr, assigns)
 

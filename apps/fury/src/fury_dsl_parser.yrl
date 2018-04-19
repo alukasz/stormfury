@@ -1,5 +1,5 @@
 Nonterminals
-grammar expr_list expr block data
+grammar expr_list expr block data topic event
 value json list list_elements list_element
 map map_elements map_element map_key
 in_expr range var
@@ -10,7 +10,7 @@ boolean
 
 Terminals
 int float string identifier
-push think do end for in true false null
+push join think do end for in true false null
 '{' '}' '[' ']' ':' ',' '..'
 .
 
@@ -26,6 +26,13 @@ expr_list -> expr expr_list : ['$1' | '$2'].
 expr -> push data         : {push, ['$2']}.
 expr -> think int         : {think, [extract_value('$2')]}.
 expr -> for in_expr block : {for, ['$2', '$3']}.
+% PhoenixChannels expressions
+expr -> join topic comma_separator data                       :
+    {{join, '$2'}, ['$4']}.
+expr -> push topic comma_separator event comma_separator data :
+    {{push, '$2', '$4'}, ['$6']}.
+topic -> string                 : extract_value('$1').
+event -> string                 : extract_value('$1').
 
 data -> int    : extract_value('$1').
 data -> string : extract_value('$1').

@@ -125,6 +125,25 @@ defmodule Fury.DSL.ParserTest do
     end
   end
 
+  describe "PhoenixChannels push" do
+    test "AST is {{:push, topic, event}, payload}" do
+      tokens = [{:push, 1},  {:string, 1, "channel"}, {:",", 1},
+                {:string, 1, "event"}, {:",", 1}, {:string, 1, "payload"}]
+
+      assert Parser.parse(tokens) ==
+        {:ok, [{{:push, "channel", "event"}, ["payload"]}]}
+    end
+  end
+
+  describe "PhoenixChannels join" do
+    test "AST is {{join, topic}, payload}" do
+      tokens = [{:join, 1},  {:string, 1, "channel"}, {:",", 1},
+                {:string, 1, "payload"}]
+
+      assert Parser.parse(tokens) == {:ok, [{{:join, "channel"}, ["payload"]}]}
+    end
+  end
+
   test "invalid syntax results in error" do
     tokens = [{:"<", 1}, {:">", 1}]
 
