@@ -9,8 +9,8 @@ defmodule Storm.Launcher.LauncherServer do
     GenServer.start_link(__MODULE__, opts)
   end
 
-  def init([simulation_id, state_id]) do
-    state = Simulation.get_session(simulation_id, state_id)
+  def init([simulation_id, session_id]) do
+    state = Simulation.get_session(simulation_id, session_id)
     do_init(state)
 
     {:ok, state}
