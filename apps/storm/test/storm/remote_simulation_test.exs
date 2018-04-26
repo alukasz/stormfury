@@ -9,12 +9,15 @@ defmodule Storm.RemoteSimulationTest do
   alias Storm.Mock
 
   setup :default_simulation
+  setup :default_session
 
   describe "start/1" do
     test "invokes FuryBridge", %{simulation: simulation} do
       expect Mock.Fury, :start_simulation, fn _, _ -> {[], []} end
 
       RemoteSimulation.start(simulation)
+
+      verify!()
     end
 
     test "creates pg2 group", %{simulation: simulation} do
