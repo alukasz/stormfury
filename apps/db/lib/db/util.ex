@@ -2,9 +2,14 @@ defmodule Db.Util do
   alias Db.Record
 
   def match_spec(%_{} = struct, field, value) do
-    struct
-    |> empty_match_spec()
-    |> put_elem(get_field_position(struct, field), value)
+    match_spec(struct, [{field, value}])
+  end
+
+  def match_spec(%_{} = struct, pairs) do
+    match_spec = empty_match_spec(struct)
+    Enum.reduce pairs, match_spec, fn {field, value}, match_spec ->
+      put_elem(match_spec, get_field_position(struct, field), value)
+    end
   end
 
   defp empty_match_spec(%mod{} = struct) do
