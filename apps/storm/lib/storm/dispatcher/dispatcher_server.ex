@@ -90,13 +90,16 @@ defmodule Storm.Dispatcher.DispatcherServer do
   end
 
   defp call_remote_sessions(pids) do
-    Enum.each pids, fn {pid, sessions} ->
-      Enum.each sessions, fn {session, clients} ->
-        spawn fn ->
+    pids
+    |> Enum.map(fn {pid, sessions} ->
+      Enum.map sessions, fn {session, clients} ->
+        Task.async fn ->
           @fury_bridge.start_clients(pid, session, clients)
         end
       end
-    end
+    end)
+    |> List.flatten()
+    |> Enum.map(&Task.await/1)
   end
 
   defp schedule_start_clients do

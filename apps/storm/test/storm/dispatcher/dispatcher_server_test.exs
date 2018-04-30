@@ -1,5 +1,5 @@
 defmodule Storm.Simulation.DispatcherServerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Mox
 
@@ -63,12 +63,13 @@ defmodule Storm.Simulation.DispatcherServerTest do
   end
 
   describe "handle_info(:start_clients, _)" do
+    setup :create_pg2_group
+    setup :set_mox_global
     setup do
       {:ok, agent} = start_supervised({Agent, fn -> {%{}, %{}} end})
 
       {:ok, agent: agent}
     end
-    setup :create_pg2_group
 
     test "does not reply", %{state: state} do
       stub Mock.Fury, :start_clients, fn _, _, _ -> :ok end

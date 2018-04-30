@@ -1,5 +1,5 @@
 defmodule Storm.Launcher.LauncherServerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Mox
   import Storm.SimulationHelper
@@ -50,13 +50,13 @@ defmodule Storm.Launcher.LauncherServerTest do
     setup :create_pg2_group
     setup :start_simulation_server
     setup :start_dispatcher_server
+    setup :set_mox_global
     setup %{session: session, dispatcher: dispatcher} do
       {:ok, session: %{session | dispatcher_pid: dispatcher}}
     end
 
     test "starts arrival_rate clients", %{session: session,
                                           dispatcher: dispatcher} do
-      allow(Mock.Fury, self(), dispatcher)
       expect Mock.Fury, :start_clients, fn _, _, [_, _] -> :ok end
 
       LauncherServer.handle_info(:start_clients, session)
@@ -67,7 +67,6 @@ defmodule Storm.Launcher.LauncherServerTest do
 
     test "when less than arrival rate", %{dispatcher: dispatcher,
                                           session: session} do
-      allow(Mock.Fury, self(), dispatcher)
       expect Mock.Fury, :start_clients, fn _, _, [_] -> :ok end
       session = %{session | clients_started: 9}
 
@@ -77,9 +76,7 @@ defmodule Storm.Launcher.LauncherServerTest do
       verify!()
     end
 
-    test "does not start clients when all started", %{dispatcher: dispatcher,
-                                                      session: session} do
-      allow(Mock.Fury, self(), dispatcher)
+    test "does not start clients when all started", %{session: session} do
       stub Mock.Fury, :start_clients, fn _, _, _ -> send(self(), :called) end
       session = %{session | clients_started: 10}
 
@@ -88,8 +85,7 @@ defmodule Storm.Launcher.LauncherServerTest do
       refute_receive _
     end
 
-    test "updates Db.Session", %{dispatcher: dispatcher, session: session} do
-      allow(Mock.Fury, self(), dispatcher)
+    test "updates Db.Session", %{session: session} do
       stub Mock.Fury, :start_clients, fn _, _, _ -> :ok end
       session = %{session | clients_started: 5}
 
