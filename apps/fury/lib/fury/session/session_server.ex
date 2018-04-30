@@ -5,6 +5,7 @@ defmodule Fury.Session.SessionServer do
   alias Fury.Session
   alias Fury.State
   alias Fury.Cache
+  alias Fury.Metrics
   alias Fury.Session.SessionSupervisor
   alias Fury.Client.ClientsSupervisor
 
@@ -77,10 +78,11 @@ defmodule Fury.Session.SessionServer do
     cache
   end
 
-  defp start_clients(%{clients_sup_pid: pid} = state, ids) do
+  defp start_clients(%{clients_sup_pid: pid, metrics_ref: ref} = state, ids) do
     Enum.each ids, fn id ->
       state = client_state(state, id)
       {:ok, _} = ClientsSupervisor.start_child(pid, state)
+      Metrics.incr(ref, id, :clients)
     end
     State.add_ids(state.simulation_id, state.id, ids)
   end

@@ -21,9 +21,7 @@ defmodule Fury.Client.ClientFSM do
     }
   end
 
-  def init(%{protocol_mod: protocol_mod, metrics_ref: ref, id: id} = client) do
-    Metrics.incr(ref, id, :clients)
-
+  def init(%{protocol_mod: protocol_mod} = client) do
     protocol_state = protocol_mod.init()
 
     {:ok, :disconnected, %{client | protocol_state: protocol_state}}
@@ -102,9 +100,7 @@ defmodule Fury.Client.ClientFSM do
     end
   end
 
-  def terminate(_reason, _state, %{metrics_ref: ref, id: id}) do
-    Metrics.decr(ref, id, :clients)
-
+  def terminate(_reason, _state, _client) do
     :ok
   end
 

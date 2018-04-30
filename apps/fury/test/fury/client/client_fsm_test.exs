@@ -29,7 +29,6 @@ defmodule Fury.Client.ClientFSMTest do
   end
 
   describe "init/1" do
-    setup :metrics
     setup do
       stub Protocol, :init, fn -> %{} end
 
@@ -48,12 +47,6 @@ defmodule Fury.Client.ClientFSMTest do
     test "sets initial state to :disconnected", %{client: client} do
       assert {_, :disconnected, _} = ClientFSM.init(client)
     end
-
-    test "increases :clients metric", %{client: client, metrics_ref: ref} do
-      ClientFSM.init(client)
-
-      assert {:clients, 1} in Metrics.get(ref)
-    end
   end
 
   describe "callback_mode/0" do
@@ -65,7 +58,6 @@ defmodule Fury.Client.ClientFSMTest do
       assert :state_enter in ClientFSM.callback_mode()
     end
   end
-
 
   describe "handle_event(:enter, _, :disconnected, _)" do
     test "keeps state and data", %{client: client} do
@@ -97,6 +89,21 @@ defmodule Fury.Client.ClientFSMTest do
 
         assert_receive :make_request
       end
+    end
+  end
+
+  describe "handle_event(:state_timeout, :connect, _, _)" do
+    setup %{client: client} do
+      {:ok, client: %{client | supervisor_pid: self(),
+                      transport_mod: Fury.Transport.WebSocket}}
+    end
+
+    test "starts transport under supervisor", %{client: client} do
+      spawn fn ->
+        ClientFSM.handle_event(:state_timeout, :connect, :disconnected, client)
+      end
+
+      assert_receive {_, _, {:start_child, _}}
     end
   end
 
@@ -318,15 +325,6 @@ defmodule Fury.Client.ClientFSMTest do
       ClientFSM.handle_event(:info, :make_request, :connected, client)
 
       refute {:messages_sent, 1} in Metrics.get(ref)
-    end
-  end
-
-  describe "terminate/2" do
-    setup :metrics
-    test "decreases :clients metric", %{client: client, metrics_ref: ref} do
-      ClientFSM.terminate(:reason, :state, client)
-
-      assert {:clients, -1} in Metrics.get(ref)
     end
   end
 

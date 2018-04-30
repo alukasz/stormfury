@@ -90,7 +90,7 @@ defmodule Fury.Session.SessionServerTest do
       stub Transport, :connect, fn _ -> {:error, :timeout} end
       ref = Metrics.new()
 
-      {:ok, session: %{session | metrics_ref: ref}}
+      {:ok, session: %{session | metrics_ref: ref}, metrics_ref: ref}
     end
 
     test "starts clients", %{session: session} do
@@ -109,6 +109,12 @@ defmodule Fury.Session.SessionServerTest do
       SessionServer.handle_cast({:start_clients, [1, 2]}, session)
 
       assert State.get_ids(session.simulation_id, session.id) == [1, 2]
+    end
+
+    test "increases clients metric", %{session: session, metrics_ref: ref} do
+      SessionServer.handle_cast({:start_clients, [1, 2]}, session)
+
+      assert {:clients, 2} in Metrics.get(ref)
     end
   end
 
