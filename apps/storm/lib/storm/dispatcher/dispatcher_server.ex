@@ -92,7 +92,9 @@ defmodule Storm.Dispatcher.DispatcherServer do
   defp call_remote_sessions(pids) do
     Enum.each pids, fn {pid, sessions} ->
       Enum.each sessions, fn {session, clients} ->
-        @fury_bridge.start_clients(pid, session, clients)
+        spawn fn ->
+          @fury_bridge.start_clients(pid, session, clients)
+        end
       end
     end
   end
