@@ -4,6 +4,8 @@ defmodule Storm.Metrics.MetricsCollector do
   alias Db.NodeMetrics
   alias Db.Metrics
 
+  require Logger
+
   @interval :timer.seconds(1)
 
   def start_link(opts) do
@@ -11,6 +13,7 @@ defmodule Storm.Metrics.MetricsCollector do
   end
 
   def init(simulation_id) do
+    Logger.metadata(simulation: simulation_id)
     schedule()
 
     {:ok, simulation_id}
@@ -29,6 +32,7 @@ defmodule Storm.Metrics.MetricsCollector do
     |> Enum.map(&Map.take(&1, [:clients, :clients_connected,
                               :messages_sent, :messages_received]))
     |> sum_node_metrics()
+    |> log_clients()
     |> insert_metrics(simulation_id)
   end
 
@@ -36,6 +40,12 @@ defmodule Storm.Metrics.MetricsCollector do
     Enum.reduce(rest, node_metric, fn current, sum ->
       Map.merge(sum, current, fn _, v1, v2 -> v1 + v2 end)
     end)
+  end
+
+  defp log_clients(%{clients: clients, clients_connected: connected} = metrics) do
+    Logger.debug("Clients started: #{clients}, connected: #{connected}")
+
+    metrics
   end
 
   defp insert_metrics(metrics, simulation_id) do
