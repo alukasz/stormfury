@@ -62,11 +62,11 @@ defmodule Storm.RemoteSimulationTest do
     end
 
     test "invokes FuryBridge", %{simulation: simulation} do
-      spawn_link fn ->
-        RemoteSimulation.terminate(simulation)
-      end
+      expect Mock.Fury, :terminate, fn _ -> :ok end
 
-      assert_receive {_, _, :terminate}
+      RemoteSimulation.terminate(simulation)
+
+      verify!()
     end
   end
 end

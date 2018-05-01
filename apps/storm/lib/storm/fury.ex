@@ -15,6 +15,11 @@ defmodule Storm.Fury do
     GenServer.cast(pid, {:start_clients, session_id, ids})
   end
 
+  @impl true
+  def terminate(pid) do
+    GenServer.call(pid, :terminate)
+  end
+
   defp nodes(:prod) do
     Node.list()
   end

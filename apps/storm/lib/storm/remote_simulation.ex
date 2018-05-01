@@ -16,7 +16,7 @@ defmodule Storm.RemoteSimulation do
   def terminate(simulation) do
     simulation
     |> get_group_members()
-    |> Enum.map(&GenServer.call(&1, :terminate))
+    |> Enum.map(&(@fury_bridge.terminate/1))
   end
 
   defp create_group(%{id: id} = simulation) do

@@ -151,15 +151,17 @@ defmodule Storm.SimulationServerTest do
 
     test "terminates remote nodes", %{simulation: simulation} do
       :pg2.join(Fury.group(simulation.id), self())
+      expect Mock.Fury, :terminate, fn _ -> :ok end
 
-      spawn fn ->
-        SimulationServer.handle_info(:terminate, simulation)
-      end
 
-      assert_receive {_, _, :terminate}
+      SimulationServer.handle_info(:terminate, simulation)
+
+      verify!()
     end
 
     test "changes simulation state to :finished", %{simulation: simulation} do
+      stub Mock.Fury, :terminate, fn _ -> :ok end
+
       SimulationServer.handle_info(:terminate, simulation)
 
       assert %{state: :finished} = Db.Simulation.get(simulation.id)
