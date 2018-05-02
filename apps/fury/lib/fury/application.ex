@@ -6,8 +6,8 @@ defmodule Fury.Application do
   def start(_type, _args) do
     children = [
       Fury.RegistrySupervisor,
-      Fury.Server,
       Fury.Simulation.SimulationsSupervisor,
+      Fury.Server,
     ]
     opts = [
       strategy: :rest_for_one,
